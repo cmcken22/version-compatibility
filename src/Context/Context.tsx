@@ -31,25 +31,38 @@ const getVersionCompatibility = async (
 
   const res = [];
   const peers: any = {};
+
+  let startingAt: string = "";
   if (npmData && npmData.versions) {
     const versions = npmData.versions;
     for (const version in versions) {
-      const data = versions[version];
       const preRelease = semver.prerelease(version);
       if (preRelease) continue;
-      if (data.peerDependencies) {
-        peers[version] = data.peerDependencies;
+      const data = versions[version];
+      if (data.peerDependencies && data.peerDependencies?.[basePackage]) {
+        startingAt = version;
+        break;
       }
+    }
+  }
+
+  if (npmData && npmData.versions) {
+    const versions = npmData.versions;
+    for (const version in versions) {
+      const preRelease = semver.prerelease(version);
+      if (preRelease) continue;
+
+      const data = versions[version];
+      // if (data.peerDependencies) {
+      peers[version] = data.peerDependencies;
+      // console.log(`${target}@${version}:`, data.peerDependencies);
+      // }
       if (data.peerDependencies && data.peerDependencies?.[basePackage]) {
         // @ts-ignore
         const test = semver.satisfies(bv, data.peerDependencies?.[basePackage]);
-        // console.log(
-        //   `${target}@${version}`,
-        //   baseVersion,
-        //   data.peerDependencies?.[basePackage],
-        //   test
-        // );
         if (test) res.push(version);
+      } else if (startingAt && semver.gt(version, startingAt)) {
+        res.push(version);
       }
     }
   }
@@ -168,6 +181,26 @@ const AppContextProvider = ({ children }: any) => {
     [handleSetUpdateObject]
   );
 
+  const handleUpdateVersion = useCallback(
+    (data: any, version: string) => {
+      const { peers } = data;
+      const peerArr = Object.keys(peers);
+      const lastPeer = peerArr[peerArr.length - 1];
+      console.clear();
+      console.log("data:", data);
+      console.log("version:", version);
+      console.log("lastPeer:", lastPeer);
+      let val = `^${version}`;
+      if (version === lastPeer) val = "latest";
+      updateObjectRef.current = {
+        ...updateObjectRef.current,
+        [data?.lib]: val,
+      };
+      setUpdateObject(updateObjectRef.current);
+    },
+    [handleSetUpdateObject]
+  );
+
   const handleResetContext = useCallback(() => {
     setBasePackage("react");
     setBaseVersion("^18.3.1");
@@ -193,6 +226,7 @@ const AppContextProvider = ({ children }: any) => {
         jsonData,
         showInvalidReposOnly,
         updateObject,
+        updateVersion: handleUpdateVersion,
         setJsonData,
         setBasePackage,
         setBaseVersion,

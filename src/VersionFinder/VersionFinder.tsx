@@ -1,13 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import throttle from "lodash.throttle";
 import { Autocomplete as MuiAutocomplete, TextField } from "@mui/material";
 import semver from "semver";
-
-export const initialOptions = [
-  { title: "The Shawshank Redemption" },
-  { title: "The Godfather" },
-  { title: "The Godfather: Part II" },
-];
 
 async function searchNpmPackages(query: any) {
   const url = `https://registry.npmjs.org/${query}`;

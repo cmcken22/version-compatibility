@@ -1,10 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import "./App.css";
-import cx from "classnames";
+import { SyntheticEvent, useCallback, useMemo, useState } from "react";
 import { Autocomplete } from "./Autocomplete";
 import { VersionFinder } from "./VersionFinder";
 import {
-  Checkbox,
   FormControlLabel,
   FormGroup,
   Snackbar,
@@ -12,142 +9,10 @@ import {
   Switch,
 } from "@mui/material";
 import { useAppContext } from "./Context";
-
-const DataTableRow = ({ item, idx }: any) => {
-  const { updateObject, onUpdate } = useAppContext();
-
-  const compatible = useMemo(() => {
-    const { compatibleVersions } = item;
-    const min = compatibleVersions[0];
-    const max =
-      compatibleVersions.length > 1
-        ? compatibleVersions[compatibleVersions.length - 1]
-        : undefined;
-    const compatible = [min, max].filter((v: any) => Boolean(v));
-    return compatible;
-  }, [item]);
-
-  useEffect(() => {
-    return () => {
-      onUpdate(item, { target: { checked: false } });
-    };
-  }, [onUpdate, item]);
-
-  return (
-    <tr
-      key={`${item.lib}--${idx}`}
-      className={cx({
-        "bg-red-50": item?.requiresUpdate,
-        "bg-green-50": !item?.requiresUpdate,
-      })}
-    >
-      <td className="pl-3">{item.lib}</td>
-      <td>{item.currentVersion}</td>
-      <td>{compatible?.join(" - ")}</td>
-      <td>{item.requiresUpdate ? "Yes" : "No"}</td>
-      <td>
-        <Checkbox
-          checked={Boolean(updateObject?.[item.lib])}
-          onChange={(e) => onUpdate(item, e)}
-        />
-      </td>
-    </tr>
-  );
-};
-
-const DataTable = ({ data }: any) => {
-  const {
-    basePackage,
-    baseVersion,
-    showInvalidReposOnly,
-    updateObject,
-    setUpdateObject,
-    onUpdate,
-  } = useAppContext();
-
-  const options = useMemo(() => {
-    const options = data?.filter((item: any) => {
-      const { requiresUpdate } = item;
-      if (showInvalidReposOnly && !requiresUpdate) return false;
-      return true;
-    });
-    return options;
-  }, [showInvalidReposOnly]);
-
-  const detectAllRequiredChecked = useCallback(() => {
-    for (const item of data) {
-      if (item.requiresUpdate) {
-        if (!updateObject[item.lib]) return false;
-      }
-    }
-    return true;
-  }, [updateObject, data]);
-
-  const detectAllChecked = useCallback(() => {
-    for (const item of data) {
-      if (!updateObject[item.lib]) return false;
-    }
-    return true;
-  }, [updateObject, data]);
-
-  const allRequiredChecked = useMemo(() => {
-    return detectAllRequiredChecked();
-  }, [detectAllRequiredChecked]);
-
-  const allChecked = useMemo(() => {
-    if (showInvalidReposOnly) return detectAllRequiredChecked();
-    return detectAllChecked();
-  }, [detectAllChecked, detectAllRequiredChecked, showInvalidReposOnly]);
-
-  const indeterminate = useMemo(() => {
-    if (allRequiredChecked && !allChecked) return true;
-    return false;
-  }, [allRequiredChecked, allChecked]);
-
-  const handleUpdate = useCallback(
-    (e: any) => {
-      for (const item of data) {
-        if (indeterminate) {
-          onUpdate(item, e);
-        } else if (item.requiresUpdate || !e?.target?.checked) {
-          onUpdate(item, e);
-        }
-      }
-    },
-    [data, updateObject, setUpdateObject, onUpdate, indeterminate]
-  );
-
-  return (
-    <table border={1} style={{ width: "100%", borderCollapse: "collapse" }}>
-      <thead>
-        <tr>
-          <th className="text-left">Library</th>
-          <th className="text-left">Current Version</th>
-          <th className="text-left">
-            Compatible with {basePackage}@{baseVersion}
-          </th>
-          <th className="text-left">Requires Update</th>
-          <th className="text-left">
-            <Checkbox
-              checked={allChecked}
-              onChange={(e) => handleUpdate(e)}
-              indeterminate={indeterminate}
-            />
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {options.map((item: any, idx: number) => (
-          <DataTableRow
-            key={`${item.lib}--${basePackage}--${baseVersion}`}
-            item={item}
-            idx={idx}
-          />
-        ))}
-      </tbody>
-    </table>
-  );
-};
+import { DataTable } from "./DataTable";
+import "./App.css";
+import { ModalContainer } from "@cmckenna/use-async-modal";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 
 const copyToClipboard = (val: string) => {
   navigator.clipboard.writeText(val);
@@ -209,9 +74,9 @@ function FileUploader() {
         // "@babel/runtime": "^7.10.5",
         // "@datadog/browser-rum": "^1.21.0",
         // "@reduxjs/toolkit": "^1.5.1",
-        // "ag-grid-community": "^20.2.0",
-        // "ag-grid-enterprise": "^20.2.0",
-        // "ag-grid-react": "^20.2.0",
+        "ag-grid-community": "^20.2.0",
+        "ag-grid-enterprise": "^20.2.0",
+        "ag-grid-react": "^20.2.0",
         // antd: "^4.15.1",
         // "antd-dayjs-webpack-plugin": "^1.0.6",
         // axios: "^0.21.1",
@@ -260,7 +125,7 @@ function FileUploader() {
         // qs: "^6.10.1",
         // react: "^18.3.1",
         // "react-dom": "^18.3.1",
-        "react-hot-loader": "^4.13.0",
+        // "react-hot-loader": "^4.13.0",
         // "react-image-crop": "^9.0.2",
         // "react-redux": "^7.1.3",
         // "react-router-dom": "^5.0.1",
@@ -369,7 +234,7 @@ function FileUploader() {
   );
 
   const handleCloseSnackbar = useCallback(
-    (event: React.SyntheticEvent | Event, reason?: SnackbarCloseReason) => {
+    (event: SyntheticEvent | Event, reason?: SnackbarCloseReason) => {
       if (reason === "clickaway") {
         return;
       }
@@ -482,19 +347,25 @@ function FileUploader() {
           ) : null}
         </div>
       )}
-      <div className="flex flex-col gap-1">
-        <p
-          className="cursor-copy w-fit"
-          onClick={() => handleCopyText(npmUpdateString)}
-        >
-          {npmUpdateString}
-        </p>
-        <p
-          className="cursor-copy w-fit"
-          onClick={() => handleCopyText(yarnUpdateString)}
-        >
-          {yarnUpdateString}
-        </p>
+      <div className="flex flex-col gap-2">
+        {npmUpdateString && (
+          <div
+            className="cursor-copy w-fit flex items-center"
+            onClick={() => handleCopyText(npmUpdateString)}
+          >
+            <ContentCopyIcon fontSize="small" />
+            <p className="ml-2">{npmUpdateString}</p>
+          </div>
+        )}
+        {yarnUpdateString && (
+          <div
+            className="cursor-copy w-fit flex items-center"
+            onClick={() => handleCopyText(yarnUpdateString)}
+          >
+            <ContentCopyIcon fontSize="small" />
+            <p className="ml-2">{yarnUpdateString}</p>
+          </div>
+        )}
       </div>
       <Snackbar
         anchorOrigin={{
@@ -513,6 +384,7 @@ function FileUploader() {
 function App() {
   return (
     <div className="App">
+      <ModalContainer />
       <FileUploader />
     </div>
   );
