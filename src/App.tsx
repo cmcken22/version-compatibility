@@ -32,6 +32,9 @@ function FileUploader() {
     setShowInvalidReposOnly,
     updateObject,
     resetContext,
+    dataController,
+    onSubmit,
+    deps,
   } = useAppContext();
   const [openSnackbar, setOpenSnakcbar] = useState(false);
 
@@ -63,99 +66,99 @@ function FileUploader() {
       license: "ISC",
       "//": ["dependencies for server only; devDependencies for webpack "],
       dependencies: {
-        // "@ant-design/icons": "^4.6.2",
-        // "@babel/core": "^7.4.5",
-        // "@babel/plugin-proposal-class-properties": "^7.10.4",
-        // "@babel/plugin-proposal-object-rest-spread": "^7.10.4",
-        // "@babel/plugin-transform-runtime": "^7.10.5",
-        // "@babel/polyfill": "^7.12.1",
-        // "@babel/preset-env": "^7.4.5",
-        // "@babel/preset-react": "^7.0.0",
-        // "@babel/runtime": "^7.10.5",
-        // "@datadog/browser-rum": "^1.21.0",
-        // "@reduxjs/toolkit": "^1.5.1",
+        "@ant-design/icons": "^4.6.2",
+        "@babel/core": "^7.4.5",
+        "@babel/plugin-proposal-class-properties": "^7.10.4",
+        "@babel/plugin-proposal-object-rest-spread": "^7.10.4",
+        "@babel/plugin-transform-runtime": "^7.10.5",
+        "@babel/polyfill": "^7.12.1",
+        "@babel/preset-env": "^7.4.5",
+        "@babel/preset-react": "^7.0.0",
+        "@babel/runtime": "^7.10.5",
+        "@datadog/browser-rum": "^1.21.0",
+        "@reduxjs/toolkit": "^1.5.1",
         "ag-grid-community": "^20.2.0",
         "ag-grid-enterprise": "^20.2.0",
         "ag-grid-react": "^20.2.0",
-        // antd: "^4.15.1",
-        // "antd-dayjs-webpack-plugin": "^1.0.6",
-        // axios: "^0.21.1",
-        // "babel-core": "^7.0.0-bridge.0",
-        // "babel-eslint": "^10.0.3",
-        // "babel-loader": "^8.0.6",
-        // "babel-plugin-import": "^1.13.0",
-        // "body-parser": "^1.19.0",
-        // classnames: "^2.3.1",
-        // "convert-units": "^2.3.4",
-        // cors: "^2.8.5",
-        // "cross-env": "^7.0.3",
-        // "css-loader": "^3.2.0",
-        // dayjs: "^1.10.5",
-        // "dd-trace": "^0.20.1",
-        // docdash: "^1.2.0",
-        // dotenv: "^8.2.0",
-        // "dotenv-webpack": "^1.7.0",
-        // ejs: "^3.0.1",
-        // enzyme: "^3.11.0",
-        // "enzyme-adapter-react-16": "^1.15.2",
-        // express: "^4.17.1",
-        // "express-pino-logger": "^5.0.0",
-        // faker: "^5.5.3",
-        // "fast-json-patch": "^3.0.0-1",
-        // "file-loader": "^6.2.0",
-        // "file-saver": "^2.0.5",
-        // fs: "0.0.1-security",
-        // "fuse.js": "^6.5.3",
-        // "google-maps": "^4.3.3",
-        // "html-webpack-plugin": "4",
-        // jest: "^26.0.1",
-        // jsdoc: "^3.6.3",
-        // json2csv: "^5.0.6",
-        // "lodash.debounce": "^4.0.8",
-        // "lodash.isempty": "^4.4.0",
-        // "lodash.isequal": "^4.5.0",
-        // "lottie-react-web": "2.1.4",
-        // "mini-css-extract-plugin": "^1.6.0",
-        // miragejs: "^0.1.41",
-        // moment: "^2.29.2",
-        // "node-env-run": "^3.0.2",
-        // "node-fetch": "^2.6.0",
-        // "npm-run-all": "^4.1.5",
-        // "pino-colada": "^2.0.0",
-        // qs: "^6.10.1",
-        // react: "^18.3.1",
-        // "react-dom": "^18.3.1",
-        // "react-hot-loader": "^4.13.0",
-        // "react-image-crop": "^9.0.2",
-        // "react-redux": "^7.1.3",
-        // "react-router-dom": "^5.0.1",
-        // "react-spinners": "^0.11.0",
-        // redux: "^4.0.4",
-        // "redux-logger": "^3.0.6",
-        // "redux-thunk": "^2.3.0",
-        // sass: "^1.77.8",
-        // "sass-loader": "^8.0.0",
-        // "source-map-explorer": "^2.5.2",
-        // "style-loader": "^1.0.0",
-        // "uglifyjs-webpack-plugin": "^2.2.0",
-        // "url-loader": "4.0.0",
-        // uuidv4: "^6.2.11",
-        // "valid-url": "^1.0.9",
-        // webpack: "^4.29.6",
-        // "webpack-cli": "^3.3.0",
-        // "webpack-dev-server": "^3.11.2",
-        // "webpack-merge": "^5.8.0",
+        antd: "^4.15.1",
+        "antd-dayjs-webpack-plugin": "^1.0.6",
+        axios: "^0.21.1",
+        "babel-core": "^7.0.0-bridge.0",
+        "babel-eslint": "^10.0.3",
+        "babel-loader": "^8.0.6",
+        "babel-plugin-import": "^1.13.0",
+        "body-parser": "^1.19.0",
+        classnames: "^2.3.1",
+        "convert-units": "^2.3.4",
+        cors: "^2.8.5",
+        "cross-env": "^7.0.3",
+        "css-loader": "^3.2.0",
+        dayjs: "^1.10.5",
+        "dd-trace": "^0.20.1",
+        docdash: "^1.2.0",
+        dotenv: "^8.2.0",
+        "dotenv-webpack": "^1.7.0",
+        ejs: "^3.0.1",
+        enzyme: "^3.11.0",
+        "enzyme-adapter-react-16": "^1.15.2",
+        express: "^4.17.1",
+        "express-pino-logger": "^5.0.0",
+        faker: "^5.5.3",
+        "fast-json-patch": "^3.0.0-1",
+        "file-loader": "^6.2.0",
+        "file-saver": "^2.0.5",
+        fs: "0.0.1-security",
+        "fuse.js": "^6.5.3",
+        "google-maps": "^4.3.3",
+        "html-webpack-plugin": "4",
+        jest: "^26.0.1",
+        jsdoc: "^3.6.3",
+        json2csv: "^5.0.6",
+        "lodash.debounce": "^4.0.8",
+        "lodash.isempty": "^4.4.0",
+        "lodash.isequal": "^4.5.0",
+        "lottie-react-web": "2.1.4",
+        "mini-css-extract-plugin": "^1.6.0",
+        miragejs: "^0.1.41",
+        moment: "^2.29.2",
+        "node-env-run": "^3.0.2",
+        "node-fetch": "^2.6.0",
+        "npm-run-all": "^4.1.5",
+        "pino-colada": "^2.0.0",
+        qs: "^6.10.1",
+        react: "^18.3.1",
+        "react-dom": "^18.3.1",
+        "react-hot-loader": "^4.13.0",
+        "react-image-crop": "^9.0.2",
+        "react-redux": "^7.1.3",
+        "react-router-dom": "^5.0.1",
+        "react-spinners": "^0.11.0",
+        redux: "^4.0.4",
+        "redux-logger": "^3.0.6",
+        "redux-thunk": "^2.3.0",
+        sass: "^1.77.8",
+        "sass-loader": "^8.0.0",
+        "source-map-explorer": "^2.5.2",
+        "style-loader": "^1.0.0",
+        "uglifyjs-webpack-plugin": "^2.2.0",
+        "url-loader": "4.0.0",
+        uuidv4: "^6.2.11",
+        "valid-url": "^1.0.9",
+        webpack: "^4.29.6",
+        "webpack-cli": "^3.3.0",
+        "webpack-dev-server": "^3.11.2",
+        "webpack-merge": "^5.8.0",
       },
-      // devDependencies: {
-      //   cypress: "^7.5.0",
-      //   eslint: "^6.5.1",
-      //   "eslint-config-prettier": "^8.3.0",
-      //   "eslint-plugin-babel": "^5.3.0",
-      //   "eslint-plugin-jsx-a11y": "^6.4.1",
-      //   "eslint-plugin-react": "^7.16.0",
-      //   nodemon: "^2.0.7",
-      //   "pre-commit": "^1.2.2",
-      // },
+      devDependencies: {
+        cypress: "^7.5.0",
+        eslint: "^6.5.1",
+        "eslint-config-prettier": "^8.3.0",
+        "eslint-plugin-babel": "^5.3.0",
+        "eslint-plugin-jsx-a11y": "^6.4.1",
+        "eslint-plugin-react": "^7.16.0",
+        nodemon: "^2.0.7",
+        "pre-commit": "^1.2.2",
+      },
     });
   }, [setJsonData]);
 
@@ -186,9 +189,19 @@ function FileUploader() {
     [setJsonData, resetContext]
   );
 
-  const handleSubmit = useCallback(() => {
-    detectVersions(jsonData);
-  }, [jsonData, detectVersions]);
+  // const handleSubmit = useCallback(async () => {
+  //   if ()
+  //   // const res = await dataController.setTargetLib(basePackage, baseVersion);
+  //   // console.log("res:", res);
+  //   // // await dataController.setJsonData(jsonData);
+  //   // // console.clear();
+  //   // const deps = dataController.getDependencies();
+  //   // console.log("deps:", deps);
+  //   // for (const dep of deps) {
+  //   //   dataController.detectRelevance(dep?.name, basePackage, baseVersion);
+  //   // }
+  //   // detectVersions(jsonData);
+  // }, [jsonData, detectVersions, basePackage, baseVersion]);
 
   const { npmUpdateString, yarnUpdateString } = useMemo<any>(() => {
     if (!updateObject || !Object.keys(updateObject).length) return "";
@@ -243,6 +256,18 @@ function FileUploader() {
     [setOpenSnakcbar]
   );
 
+  const handleTestClick = useCallback(
+    (name: string, v: string) => {
+      console.clear();
+      console.log("name:", name);
+      console.log("v:", v);
+      dataController.checkDeps(name, v);
+    },
+    [setOpenSnakcbar]
+  );
+
+  console.log("dataController:", dataController);
+
   return (
     <div className="p-10 flex flex-col gap-9">
       <div>
@@ -290,7 +315,7 @@ function FileUploader() {
           disabled={!jsonData || !Object.keys(jsonData).length}
         />
         <button
-          onClick={handleSubmit}
+          onClick={onSubmit}
           disabled={
             !jsonData ||
             !basePackage ||
@@ -317,7 +342,45 @@ function FileUploader() {
           />
         </FormGroup>
       )}
-      {result && (
+
+      {deps?.map((dep: any) => {
+        const { currentVersion } = dep;
+        const { compatibleVersions } = dataController.detectRelevance(
+          dep?.name,
+          basePackage,
+          baseVersion
+        );
+        if (!compatibleVersions?.length) return null;
+
+        return (
+          <table>
+            <thead>
+              <tr>
+                <th className="text-left">Name</th>
+                <th className="text-left">Current Version</th>
+                <th className="text-left">Compatible Version</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>{dep?.name}</td>
+                <td>{currentVersion}</td>
+                <td>
+                  {compatibleVersions?.map((v: string) => {
+                    return (
+                      <div onClick={() => handleTestClick(dep?.name, v)}>
+                        {v}
+                      </div>
+                    );
+                  })}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        );
+      })}
+
+      {/* {result && (
         <div>
           {result?.dependencies && result?.dependencies?.length ? (
             <>
@@ -376,7 +439,7 @@ function FileUploader() {
         autoHideDuration={1000}
         onClose={handleCloseSnackbar}
         message="Text Copied"
-      />
+      /> */}
     </div>
   );
 }

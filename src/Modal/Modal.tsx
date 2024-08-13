@@ -68,36 +68,39 @@ const Modal = ({ item, onResolve }: any) => {
               </tr>
             </thead>
             <tbody>
-              {Object.keys(item?.peers).map((version: any, idx: number) => {
-                const peer = item?.peers?.[version] || {};
-                let vals = [];
-                for (const key of Object.keys(peer)) {
-                  const value = peer[key];
-                  vals.push(`${key} @ ${value}`);
-                }
+              {Object.keys(item?.peers)
+                .sort()
+                .map((version: any, idx: number) => {
+                  const peer = item?.peers?.[version] || {};
+                  let vals = [];
+                  for (const key of Object.keys(peer)) {
+                    const value = peer[key];
+                    vals.push(`${key} @ ${value}`);
+                  }
 
-                return (
-                  <tr
-                    key={`${item?.lib}--${idx}`}
-                    className={cx({
-                      "border-t-2": version === min,
-                      "border-l-2 border-r-2": version >= min && version <= max,
-                      "border-b-2": version === max,
-                      "border-green-200": true,
-                      "bg-gray-100": idx % 2 === 0,
-                    })}
-                  >
-                    <td className="pl-3">{version}</td>
-                    <td className="pl-3">
-                      <ul className="list-disc">
-                        {vals.map((line, index) => {
-                          return <li key={index}>{line}</li>;
-                        })}
-                      </ul>
-                    </td>
-                  </tr>
-                );
-              })}
+                  return (
+                    <tr
+                      key={`${item?.lib}--${idx}`}
+                      className={cx({
+                        "border-t-2": version === min,
+                        "border-l-2 border-r-2":
+                          version >= min && version <= max,
+                        "border-b-2": version === max,
+                        "border-green-200": true,
+                        "bg-gray-100": idx % 2 === 0,
+                      })}
+                    >
+                      <td className="pl-3">{version}</td>
+                      <td className="pl-3">
+                        <ul className="list-disc">
+                          {vals.map((line, index) => {
+                            return <li key={index}>{line}</li>;
+                          })}
+                        </ul>
+                      </td>
+                    </tr>
+                  );
+                })}
             </tbody>
           </table>
         </Box>

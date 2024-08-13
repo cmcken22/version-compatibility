@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import cx from "classnames";
 import { Checkbox } from "@mui/material";
 import { useAppContext } from "../Context";
@@ -6,8 +6,10 @@ import { useModal } from "../Modal";
 import semver from "semver";
 
 const DataTableRow = ({ item, idx }: any) => {
-  const { updateObject, onUpdate, updateVersion } = useAppContext();
+  const { updateObject, onUpdate, updateVersion, result, jsonData } =
+    useAppContext();
   const showModal = useModal();
+  const [additionalRows, setAdditionalRows] = useState<any[]>([]);
 
   const compatible = useMemo(() => {
     const { compatibleVersions } = item;
@@ -53,6 +55,86 @@ const DataTableRow = ({ item, idx }: any) => {
     },
     [updateVersion, item, updateVersion]
   );
+
+  const checkDeps = useCallback(() => {
+    if (!checked) return null;
+    if (selectedVersionIndex === -1) return null;
+    const { compatibleVersions, peers } = item;
+    const selectedVersion = compatibleVersions[selectedVersionIndex];
+    const selectedPeer = peers?.[selectedVersion];
+
+    console.clear();
+    console.log("selectedVersion:", selectedVersion);
+    console.log("selectedPeer:", selectedPeer);
+    console.log("result:", result);
+
+    const add: any = {};
+
+    for (const key in selectedPeer) {
+      const versionRequired = selectedPeer[key];
+
+      for (const libName in result?.npmData) {
+        if (libName !== key) continue;
+        const lib = result?.npmData?.[libName];
+        const versions = lib?.versions || {};
+        for (const version in versions) {
+          let currentlySatisfied = false;
+          const currentVersion =
+            jsonData?.dependencies?.[libName] ||
+            jsonData?.devDependencies?.[libName];
+          if (currentVersion) {
+            currentlySatisfied = semver.satisfies(
+              currentVersion,
+              versionRequired
+            );
+            console.log(
+              `currentlySatisfied at ${currentVersion}:`,
+              currentlySatisfied
+            );
+            if (currentlySatisfied) continue;
+          }
+          const satisfied = semver.satisfies(version, versionRequired);
+          if (satisfied) {
+            console.log(
+              "satisfied:",
+              libName,
+              `${version} <--> ${versionRequired}`,
+              satisfied
+            );
+            if (!add[libName]) {
+              add[libName] = {
+                lib: libName,
+                currentVersion,
+                versions: [],
+              };
+            }
+            add[libName].versions.push(version);
+            // add.push({
+            //   lib: libName,
+            //   currentVersion,
+            //   version,
+            // });
+          }
+        }
+      }
+
+      console.log("add:", add);
+      const arr = Object.values(add);
+      console.log("arr:", arr);
+      setAdditionalRows(arr);
+    }
+  }, [
+    checked,
+    selectedVersionIndex,
+    item,
+    result,
+    jsonData,
+    setAdditionalRows,
+  ]);
+
+  useEffect(() => {
+    checkDeps();
+  }, [checked, selectedVersionIndex]);
 
   return (
     <React.Fragment key={`${item.lib}--${idx}`}>
@@ -105,6 +187,19 @@ const DataTableRow = ({ item, idx }: any) => {
           <td></td>
         </tr>
       )}
+      {additionalRows && additionalRows?.length ? (
+        <>
+          {additionalRows?.map((data: any, idx: number) => {
+            return (
+              <tr key={`${item?.lib}--${data?.lib}--${idx}`}>
+                <td>{data?.lib}</td>
+                <td>{data?.currentVersion}</td>
+                <td>{data?.versions}</td>
+              </tr>
+            );
+          })}
+        </>
+      ) : null}
     </React.Fragment>
   );
 };
