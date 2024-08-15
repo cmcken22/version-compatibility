@@ -52,7 +52,7 @@ const FileUpload = () => {
           className="hidden"
         />
       </Button>
-      <pre>{fileName}</pre>
+      <pre>{fileName ? fileName : "Select a file to begin"}</pre>
     </div>
   );
 };

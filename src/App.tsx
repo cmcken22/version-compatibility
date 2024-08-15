@@ -15,7 +15,7 @@ import {
   selectSubmitAttempted,
   selectSubmitDisabled,
 } from "slices/appSlice";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useAppDispatch } from "store/hooks";
 import { DataTable } from "./features/DataTable";
 import cx from "classnames";
@@ -40,6 +40,21 @@ const App = () => {
     if (!dependencies?.length && !devDependencies?.length) return true;
     return false;
   }, [loadingState, dependencies, devDependencies, submitAttempted]);
+
+  const handleKeyPress = useCallback(
+    (e: any) => {
+      if (submitDisabled) return;
+      if (e?.code === "Enter") handleSubmit();
+    },
+    [submitDisabled, handleSubmit],
+  );
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyPress);
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [handleKeyPress]);
 
   return (
     <div className="App p-10">

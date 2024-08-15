@@ -1,12 +1,16 @@
 @tailwind components;
 
 @layer components {
+  .MuiAutocomplete-loading, .MuiAutocomplete-noOptions {
+    font-family: monospace;
+    white-space: pre-wrap;
+  }
   .autocomplete__input .MuiInputBase-input, .MuiInputBase-input::placeholder {
     font-family: monospace;
     white-space: pre-wrap;
   }
   .autocomplete__option {
-    @apply px-4 py-3;
+    @apply px-4 py-3.5;
     font-family: monospace;
     white-space: pre-wrap;
   }

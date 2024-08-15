@@ -1,10 +1,14 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Autocomplete as MuiAutocomplete, TextField } from "@mui/material";
 import { useDebounce } from "use-debounce";
 import { skipToken } from "@reduxjs/toolkit/query";
 import { useGetReposByNameQuery } from "services/npmApi";
 import { useAppDispatch } from "store/hooks";
-import { selectBasePackage, setBasePackage } from "slices/appSlice";
+import {
+  clearPreviousData,
+  selectBasePackage,
+  setBasePackage,
+} from "slices/appSlice";
 import { useSelector } from "react-redux";
 import "./Autocomplete.css";
 
@@ -15,9 +19,13 @@ const Autocomplete = ({ name, label, placeholder, disabled, ...rest }: any) => {
   const [inputValue, setInputValue] = useState("");
   const [searchTerm] = useDebounce(inputValue, 500);
 
-  const { data, error, isLoading } = useGetReposByNameQuery(
+  const { data, isLoading, isFetching, status } = useGetReposByNameQuery(
     searchTerm || skipToken,
   );
+
+  const loading = useMemo(() => {
+    return isLoading || isFetching || status === "pending";
+  }, [isLoading, isFetching, status]);
 
   useEffect(() => {
     setOptions(data || []);
@@ -25,9 +33,8 @@ const Autocomplete = ({ name, label, placeholder, disabled, ...rest }: any) => {
 
   const handleSelect = useCallback(
     (val: any) => {
-      console.clear();
-      console.log("val:", val);
       dispatch(setBasePackage(val));
+      dispatch(clearPreviousData());
     },
     [dispatch],
   );
@@ -35,20 +42,24 @@ const Autocomplete = ({ name, label, placeholder, disabled, ...rest }: any) => {
   return (
     <div className="w-96">
       <MuiAutocomplete
-        id="address"
-        getOptionLabel={(option: any) =>
-          typeof option === "string" ? option : option.label
-        }
-        isOptionEqualToValue={(option: any, value: any) =>
-          option?.value === value
-        }
-        renderOption={(props, option: any) => (
-          <li {...props} className="autocomplete__option">
-            {option.label}
-          </li>
-        )}
+        id="autocomplete"
+        loading={loading}
+        getOptionLabel={(option: any) => {
+          return typeof option === "string" ? option : option.label;
+        }}
+        isOptionEqualToValue={(option: any, value: any) => {
+          return option?.value === value;
+        }}
+        renderOption={(props, option: any) => {
+          const { key, ...rest } = props;
+          return (
+            <li key={key} {...rest} className="autocomplete__option">
+              {option.label}
+            </li>
+          );
+        }}
         filterOptions={(x: any) => x}
-        options={options}
+        options={!searchTerm || loading ? [] : options}
         autoComplete
         includeInputInList
         filterSelectedOptions

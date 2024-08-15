@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Autocomplete as MuiAutocomplete, TextField } from "@mui/material";
-import semver from "semver";
 import { skipToken } from "@reduxjs/toolkit/query";
 import { useSelector } from "react-redux";
 import {
+  clearPreviousData,
   selectBasePackage,
   selectBaseVersion,
   setBaseVersion,
@@ -29,9 +29,13 @@ const VersionFinder = ({
 
   const [inputValue, setInputValue] = useState("");
 
-  const { data, error, isLoading } = useGetVersionsQuery(
+  const { data, isLoading, isFetching, status } = useGetVersionsQuery(
     basePackage || skipToken,
   );
+
+  const loading = useMemo(() => {
+    return isLoading || isFetching || status === "pending";
+  }, [isLoading, isFetching, status]);
 
   useEffect(() => {
     setOptions(data || []);
@@ -40,31 +44,43 @@ const VersionFinder = ({
   const handleSelect = useCallback(
     (val: any) => {
       dispatch(setBaseVersion(val));
+      dispatch(clearPreviousData());
     },
     [dispatch],
   );
+
+  const valid = useMemo<boolean>(() => {
+    if (!inputValue) return true;
+    const exists = options?.find((opt: any) => opt.value === inputValue);
+    if (!exists) return false;
+    return true;
+  }, [inputValue, options]);
 
   return (
     <div className="w-96">
       <MuiAutocomplete
         ref={ref}
+        loading={loading}
         open={open}
-        value={value}
-        options={options}
+        value={value ?? ""}
+        options={loading ? [] : options}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
         // noOptionsText={`Press enter to continue with ${inputValue}`}
-        getOptionLabel={(option: any) =>
-          typeof option === "string" ? option : option.label
-        }
-        isOptionEqualToValue={(option: any, value: any) =>
-          option?.value === value
-        }
-        renderOption={(props, option: any) => (
-          <li {...props} className="versionfinder__option">
-            {option.label}
-          </li>
-        )}
+        getOptionLabel={(option: any) => {
+          return typeof option === "string" ? option : option.label;
+        }}
+        isOptionEqualToValue={(option: any, value: any) => {
+          return option?.value === value;
+        }}
+        renderOption={(props, option: any) => {
+          const { key, ...rest } = props;
+          return (
+            <li key={key} {...rest} className="versionfinder__option">
+              {option.label}
+            </li>
+          );
+        }}
         onInputChange={(e, newValue) => {
           setInputValue(newValue);
         }}
@@ -86,6 +102,7 @@ const VersionFinder = ({
           <TextField
             {...rest}
             {...params}
+            error={!valid}
             variant="outlined"
             value={inputValue}
             disabled={!basePackage || disabled}
