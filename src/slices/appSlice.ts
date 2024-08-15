@@ -17,19 +17,19 @@ export interface AppSliceState {
   baseVersion: string;
   status: "idle" | "loading" | "failed";
   data: any;
-  // selected: any;
+  submitAttempted: boolean;
 }
 
 const initialState: AppSliceState = {
-  // jsonData: {},
-  jsonData: testData,
+  jsonData: {},
+  // jsonData: testData,
   basePackage: "react",
   baseVersion: "18.3.1",
   // basePackage: "ag-grid-react",
   // baseVersion: "27.2.0",
   status: "idle",
   data: {},
-  // selected: {},
+  submitAttempted: false,
 };
 
 export const getRequiredPeerDependencies = createAsyncThunk(
@@ -441,6 +441,7 @@ export const appSlice = createAppSlice({
       state.baseVersion = action?.payload || "";
     }),
     clearPreviousData: create.reducer(state => {
+      state.submitAttempted = false;
       state.data = {};
     }),
   }),
@@ -455,11 +456,13 @@ export const appSlice = createAppSlice({
         (state, action: PayloadAction<any>) => {
           state.status = "idle";
           state.data = action?.payload || {};
+          state.submitAttempted = true;
         },
       )
       .addCase(getAllPackageInfo.rejected, state => {
         state.status = "failed";
         state.data = {};
+        state.submitAttempted = true;
       })
       .addCase(selectVersion.fulfilled, (state, action: PayloadAction<any>) => {
         const { name, selectedVersion } = action.payload;
@@ -506,6 +509,7 @@ export const appSlice = createAppSlice({
   selectors: {
     selectBasePackage: state => state.basePackage,
     selectBaseVersion: state => state.baseVersion,
+    selectSubmitAttempted: state => state.submitAttempted,
     selectSubmitDisabled: state => {
       if (!state.jsonData || Object.keys(state.jsonData || {}).length === 0)
         return true;
@@ -528,6 +532,7 @@ export const {
 export const {
   selectBasePackage,
   selectBaseVersion,
+  selectSubmitAttempted,
   selectSubmitDisabled,
   selectLoadingState,
 } = appSlice.selectors;

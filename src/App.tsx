@@ -12,9 +12,10 @@ import {
   selectDevDependencies,
   selectLoadingState,
   selectResult,
+  selectSubmitAttempted,
   selectSubmitDisabled,
 } from "slices/appSlice";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { useAppDispatch } from "store/hooks";
 import { DataTable } from "./features/DataTable";
 import cx from "classnames";
@@ -25,6 +26,7 @@ const App = () => {
   const dependencies = useSelector(selectDependencies);
   const devDependencies = useSelector(selectDevDependencies);
   const loadingState = useSelector(selectLoadingState);
+  const submitAttempted = useSelector(selectSubmitAttempted);
 
   const handleSubmit = useCallback(async () => {
     await dispatch(clearPreviousData());
@@ -32,6 +34,12 @@ const App = () => {
       dispatch(getAllPackageInfo());
     });
   }, [dispatch]);
+
+  const empty = useMemo(() => {
+    if (loadingState === "loading" || !submitAttempted) return null;
+    if (!dependencies?.length && !devDependencies?.length) return true;
+    return false;
+  }, [loadingState, dependencies, devDependencies, submitAttempted]);
 
   return (
     <div className="App p-10">
@@ -55,7 +63,13 @@ const App = () => {
       </div>
       {loadingState === "loading" ? (
         <pre className="text-2xl font-bold">Loading...</pre>
-      ) : (
+      ) : null}
+
+      {empty === true ? (
+        <pre className="text-2xl font-bold">No Data.</pre>
+      ) : null}
+
+      {empty === false ? (
         <div className="flex flex-col gap-11">
           {dependencies?.length ? (
             <DataTable type="dependencies" data={dependencies} />
@@ -64,7 +78,7 @@ const App = () => {
             <DataTable type="devDependencies" data={devDependencies} />
           ) : null}
         </div>
-      )}
+      ) : null}
     </div>
   );
 };

@@ -53,28 +53,7 @@ const FileUpload = () => {
         />
       </Button>
       <pre>{fileName}</pre>
-      {/* <label
-        htmlFor="file-upload"
-        className="cursor-pointer bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-      >
-        Choose File
-      </label>
-      <input
-        id="file-upload"
-        type="file"
-        accept=".json"
-        onChange={handleFileChange}
-        className="hidden"
-      /> */}
     </div>
-    // <div className="flex items-center">
-    //   <input
-    //     className="cursor-pointer"
-    //     type="file"
-    //     accept=".json"
-    //     onChange={handleFileChange}
-    //   />
-    // </div>
   );
 };
 
