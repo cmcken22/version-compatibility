@@ -1,6 +1,13 @@
 import React, { SyntheticEvent, useCallback, useMemo, useState } from "react";
 import cx from "classnames";
-import { Checkbox, Snackbar, SnackbarCloseReason } from "@mui/material";
+import {
+  Checkbox,
+  FormControlLabel,
+  FormGroup,
+  Snackbar,
+  SnackbarCloseReason,
+  Switch,
+} from "@mui/material";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 import { useSelector } from "react-redux";
@@ -148,8 +155,7 @@ const DataTable = ({ data, type }: any) => {
   const basePackage = useSelector(selectBasePackage);
   const baseVersion = useSelector(selectBaseVersion);
   const [openSnackbar, setOpenSnackbar] = useState(false);
-
-  const showInvalidReposOnly = false;
+  const [showInvalidReposOnly, setShowInvalidReposOnly] = useState(false);
 
   const selectDownloadString = makeSelectDownloadString(type);
   const downloadString = useSelector(selectDownloadString);
@@ -188,6 +194,20 @@ const DataTable = ({ data, type }: any) => {
     if (allRequiredChecked && !allOptionsChecked) return true;
     return false;
   }, [allRequiredChecked, allOptionsChecked]);
+
+  const handleToggle = useCallback(
+    (checked: boolean) => {
+      if (checked) {
+        for (const item of data) {
+          if (item?.selectedVersion) {
+            dispatch(deselectVersion({ name: item?.name }));
+          }
+        }
+      }
+      setShowInvalidReposOnly(checked);
+    },
+    [setShowInvalidReposOnly, data, dispatch],
+  );
 
   const handleSelectAll = useCallback(
     (checked: boolean) => {
@@ -237,6 +257,19 @@ const DataTable = ({ data, type }: any) => {
   return (
     <div>
       <pre className="text-2xl font-bold mb-4">{type}</pre>
+      <FormGroup className="w-fit mb-3">
+        <FormControlLabel
+          label={`Show incompatible ${type} only`}
+          control={
+            <Switch
+              checked={showInvalidReposOnly}
+              onChange={(e: any) => {
+                handleToggle(e.target.checked);
+              }}
+            />
+          }
+        />
+      </FormGroup>
       <table border={1} style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr>

@@ -21,8 +21,8 @@ export interface AppSliceState {
 }
 
 const initialState: AppSliceState = {
-  jsonData: {},
-  // jsonData: testData,
+  // jsonData: {},
+  jsonData: testData,
   basePackage: "react",
   baseVersion: "18.3.1",
   // basePackage: "ag-grid-react",
@@ -57,7 +57,6 @@ export const getRequiredPeerDependencies = createAsyncThunk(
           );
           if (compatibleVersionsResonse?.status === "fulfilled") {
             const { data: compatibleVersions } = compatibleVersionsResonse;
-            console.log(`${peerDepName}:`, compatibleVersions);
             res[peerDepName] = compatibleVersions;
           }
         }
@@ -200,21 +199,25 @@ export const getAllPackageInfo = createAsyncThunk(
     });
 
     for (const key in res) {
-      let requiresUpdate = true;
       const data = res[key];
       const currentVersion =
         jsonData["dependencies"]?.[key] ||
         jsonData["devDependencies"]?.[key] ||
         null;
-      const cv = currentVersion
-        ? semver.minVersion(currentVersion)?.version
-        : null;
-      const satisfied = currentVersion
-        ? data?.compatibleVersions.includes(cv)
-        : false;
-      requiresUpdate = !satisfied;
-      res[key].requiresUpdate = requiresUpdate;
-      res[key].currentVersion = currentVersion;
+
+      if (!currentVersion) {
+        res[key].requiresUpdate = true;
+        res[key].currentVersion = null;
+      } else {
+        let satisfied = false;
+        const compatibleVersions = data?.compatibleVersions || [];
+        for (const v of compatibleVersions) {
+          satisfied = semver.satisfies(v, currentVersion);
+          if (satisfied) break;
+        }
+        res[key].requiresUpdate = !satisfied;
+        res[key].currentVersion = currentVersion;
+      }
     }
 
     return res;
