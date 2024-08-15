@@ -6,6 +6,7 @@ import { useGetReposByNameQuery } from "services/npmApi";
 import { useAppDispatch } from "store/hooks";
 import { selectBasePackage, setBasePackage } from "slices/appSlice";
 import { useSelector } from "react-redux";
+import "./Autocomplete.css";
 
 const Autocomplete = ({ name, label, placeholder, disabled, ...rest }: any) => {
   const dispatch = useAppDispatch();
@@ -30,51 +31,6 @@ const Autocomplete = ({ name, label, placeholder, disabled, ...rest }: any) => {
     },
     [dispatch],
   );
-  // const _fetch = useMemo(
-  //   () =>
-  //     throttle(async (request: any, callback: any) => {
-  //       // try {
-  //       //   if (onSearch) {
-  //       //     const res = await onSearch(request.input);
-  //       //     callback(res);
-  //       //   }
-  //       // } catch (error) {
-  //       //   console.error("Error fetching data:", error);
-  //       //   callback([]);
-  //       // }
-  //     }, 500),
-  //   []
-  // );
-
-  // useEffect(() => {
-  //   let active = true;
-
-  //   if (inputValue === "") {
-  //     // @ts-ignore
-  //     setOptions(value ? [value] : []);
-  //     return undefined;
-  //   }
-
-  //   _fetch({ input: inputValue }, (results: any) => {
-  //     if (active) {
-  //       let newOptions: any = [];
-
-  //       if (value) {
-  //         newOptions = [value];
-  //       }
-
-  //       if (results) {
-  //         newOptions = [...newOptions, ...results];
-  //       }
-
-  //       setOptions(newOptions);
-  //     }
-  //   });
-
-  //   return () => {
-  //     active = false;
-  //   };
-  // }, [value, inputValue, fetch]);
 
   return (
     <div className="w-96">
@@ -86,12 +42,17 @@ const Autocomplete = ({ name, label, placeholder, disabled, ...rest }: any) => {
         isOptionEqualToValue={(option: any, value: any) =>
           option?.value === value
         }
+        renderOption={(props, option: any) => (
+          <li {...props} className="autocomplete__option">
+            {option.label}
+          </li>
+        )}
         filterOptions={(x: any) => x}
         options={options}
         autoComplete
         includeInputInList
         filterSelectedOptions
-        value={value}
+        value={value ?? ""}
         disabled={disabled}
         onChange={(event: any, newValue: any) => {
           // @ts-ignore
@@ -106,11 +67,12 @@ const Autocomplete = ({ name, label, placeholder, disabled, ...rest }: any) => {
             {...rest}
             {...params}
             value={value}
-            label={label}
+            label={<pre>{label}</pre>}
             disabled={disabled}
             placeholder={placeholder}
             variant="outlined"
             fullWidth
+            className="autocomplete__input"
           />
         )}
       />

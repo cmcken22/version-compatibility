@@ -1,0 +1,16 @@
+@tailwind components;
+
+@layer components {
+  .autocomplete__input .MuiInputBase-input, .MuiInputBase-input::placeholder {
+    font-family: monospace;
+    white-space: pre-wrap;
+  }
+  .autocomplete__option {
+    @apply px-4 py-3;
+    font-family: monospace;
+    white-space: pre-wrap;
+  }
+  .autocomplete__option:hover {
+    @apply bg-gray-200 cursor-pointer;
+  }
+}

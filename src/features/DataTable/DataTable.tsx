@@ -71,8 +71,10 @@ const DataTableRow = ({ item, level }: any) => {
         <td
           className={cx("underline cursor-pointer", {
             "pl-3": !level,
-            [`pl-${level * 10}`]: level,
           })}
+          style={{
+            paddingLeft: 40 * level,
+          }}
         >
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
@@ -259,7 +261,7 @@ const DataTable = ({ data, type }: any) => {
       <pre className="text-2xl font-bold mb-4">{type}</pre>
       <FormGroup className="w-fit mb-3">
         <FormControlLabel
-          label={`Show incompatible ${type} only`}
+          label={<pre>{`Show incompatible ${type} only`}</pre>}
           control={
             <Switch
               checked={showInvalidReposOnly}
