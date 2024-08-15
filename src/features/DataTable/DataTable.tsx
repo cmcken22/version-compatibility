@@ -7,9 +7,9 @@ import { useSelector } from "react-redux";
 import {
   deselectVersion,
   makeSelectDownloadString,
+  makeSelectPackages,
   selectBasePackage,
   selectBaseVersion,
-  selectResult,
   selectVersion,
 } from "slices/appSlice";
 import { useAppDispatch } from "store/hooks";
@@ -19,12 +19,12 @@ const copyToClipboard = (val: string) => {
   navigator.clipboard.writeText(val);
 };
 
-const DataTableRow = ({ item, idx }: any) => {
+const DataTableRow = ({ item, level }: any) => {
   const dispatch = useAppDispatch();
-  // const [additonalItems, setAdditonalItems] = useState<any>([]);
   const [expandRow, setExpandRow] = useState(false);
-  const result = useSelector(selectResult);
-  // const showModal = useModal();
+
+  const selectPackageQuery = makeSelectPackages(item?.name);
+  const additionalRows = useSelector(selectPackageQuery);
 
   const compatible = useMemo(() => {
     const { compatibleVersions } = item;
@@ -52,20 +52,30 @@ const DataTableRow = ({ item, idx }: any) => {
     [item, dispatch],
   );
 
+  console.log(item?.name, "additionalRows:", additionalRows);
+
   return (
-    <React.Fragment key={`${item.name}--${idx}`}>
+    <React.Fragment>
       <tr
-        key={`${item.name}--${idx}`}
         className={cx("border-t-2 h-12", {
           "bg-red-50": item?.requiresUpdate,
           "bg-green-50": !item?.requiresUpdate,
         })}
       >
         <td
-          className="pl-3 underline cursor-pointer"
-          // onClick={handleOpenModal}
+          className={cx("underline cursor-pointer", {
+            "pl-3": !level,
+            [`pl-${level * 10}`]: level,
+          })}
         >
-          <pre>{item.name}</pre>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              {Array.from({ length: level }).map((_, idx: number) => (
+                <div key={idx} className="w-2 h-2 bg-black rounded-full" />
+              ))}
+            </div>
+            <pre>{item.name}</pre>
+          </div>
         </td>
         <td>
           <pre>{item.currentVersion}</pre>
@@ -77,7 +87,7 @@ const DataTableRow = ({ item, idx }: any) => {
           {expandRow ? <ArrowDropUpIcon /> : <ArrowDropDownIcon />}
           <pre>{compatible?.join(" - ")} </pre>
         </td>
-        <td>
+        <td className="min-w-32">
           <pre>{item.requiresUpdate ? "Yes" : "No"}</pre>
         </td>
         <td>
@@ -121,6 +131,15 @@ const DataTableRow = ({ item, idx }: any) => {
           <td></td>
         </tr>
       )}
+      {additionalRows?.map((obj: any) => {
+        return (
+          <DataTableRow
+            key={`${item.name}--${obj?.name}`}
+            item={obj}
+            level={level + 1}
+          />
+        );
+      })}
     </React.Fragment>
   );
 };
@@ -142,12 +161,14 @@ const DataTable = ({ data, type }: any) => {
       yarnStr: `yarn add ${downloadString} ${type === "devDependencies" ? "-D" : ""}`,
     };
   }, [downloadString, type]);
-  console.log("downloadString:", downloadString);
-  console.log("npmStr:", npmStr);
-  console.log("yarnStr:", yarnStr);
+
+  // console.log("downloadString:", downloadString);
+  // console.log("npmStr:", npmStr);
+  // console.log("yarnStr:", yarnStr);
 
   const options = useMemo(() => {
     const options = data?.filter((item: any) => {
+      if (item.dependentOn) return false;
       const { requiresUpdate } = item;
       if (showInvalidReposOnly && !requiresUpdate) return false;
       return true;
@@ -243,11 +264,11 @@ const DataTable = ({ data, type }: any) => {
           </tr>
         </thead>
         <tbody>
-          {options.map((item: any, idx: number) => (
+          {options.map((item: any) => (
             <DataTableRow
               key={`${item.name}--${basePackage}--${baseVersion}`}
               item={item}
-              idx={idx}
+              level={0}
             />
           ))}
         </tbody>

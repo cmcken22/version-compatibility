@@ -17,7 +17,7 @@ export interface AppSliceState {
   baseVersion: string;
   status: "idle" | "loading" | "failed";
   data: any;
-  selected: any;
+  // selected: any;
 }
 
 const initialState: AppSliceState = {
@@ -29,7 +29,7 @@ const initialState: AppSliceState = {
   // baseVersion: "27.2.0",
   status: "idle",
   data: {},
-  selected: {},
+  // selected: {},
 };
 
 export const getRequiredPeerDependencies = createAsyncThunk(
@@ -388,6 +388,23 @@ export const makeSelectDownloadString = (type: string) => {
   });
 };
 
+export const makeSelectPackages = (name: string) => {
+  return createSelector([selectData], data => {
+    const res: any = [];
+    for (const key in data) {
+      const obj = data[key];
+      if (obj?.dependentOn === name) {
+        res.push(obj);
+      }
+    }
+    return res.sort((a: any, b: any) => {
+      var textA = a.name.toUpperCase();
+      var textB = b.name.toUpperCase();
+      return textA < textB ? -1 : textA > textB ? 1 : 0;
+    });
+  });
+};
+
 // If you are not using async thunks you can use the standalone `createSlice`.
 export const appSlice = createAppSlice({
   name: "appSlice",
@@ -402,6 +419,9 @@ export const appSlice = createAppSlice({
     }),
     setBaseVersion: create.reducer((state, action: PayloadAction<string>) => {
       state.baseVersion = action?.payload || "";
+    }),
+    clearPreviousData: create.reducer(state => {
+      state.data = {};
     }),
   }),
   extraReducers: builder => {
@@ -456,8 +476,8 @@ export const appSlice = createAppSlice({
         },
       );
   },
-  // // You can define your selectors here. These selectors receive the slice
-  // // state as their first argument.
+  // You can define your selectors here. These selectors receive the slice
+  // state as their first argument.
   selectors: {
     selectBasePackage: state => state.basePackage,
     selectBaseVersion: state => state.baseVersion,
@@ -467,19 +487,22 @@ export const appSlice = createAppSlice({
       if (!state.basePackage || !state.baseVersion) return true;
       return false;
     },
-    // selectDownloadString: (state, test) => {
-    //   console.log("state:", state, test);
-    // },
+    selectLoadingState: state => state.status,
   },
 });
 
 // Action creators are generated for each case reducer function.
-export const { setJsonData, setBasePackage, setBaseVersion } = appSlice.actions;
+export const {
+  setJsonData,
+  setBasePackage,
+  setBaseVersion,
+  clearPreviousData,
+} = appSlice.actions;
 
 // Selectors returned by `slice.selectors` take the root state as their first argument.
 export const {
   selectBasePackage,
   selectBaseVersion,
   selectSubmitDisabled,
-  // selectDownloadString,
+  selectLoadingState,
 } = appSlice.selectors;

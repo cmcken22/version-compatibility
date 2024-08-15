@@ -5,9 +5,11 @@ import FileUpload from "./features/FileUpload";
 import { VersionFinder } from "./features/VersionFinder";
 import { useSelector } from "react-redux";
 import {
+  clearPreviousData,
   getAllPackageInfo,
   selectDependencies,
   selectDevDependencies,
+  selectLoadingState,
   selectResult,
   selectSubmitDisabled,
 } from "slices/appSlice";
@@ -21,8 +23,10 @@ const App = () => {
   const dependencies = useSelector(selectDependencies);
   const devDependencies = useSelector(selectDevDependencies);
   const result = useSelector(selectResult);
+  const loadingState = useSelector(selectLoadingState);
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
+    await dispatch(clearPreviousData());
     dispatch(getAllPackageInfo());
   }, [dispatch]);
 
@@ -38,13 +42,19 @@ const App = () => {
           Submit
         </Button>
       </div>
-      <pre>{JSON.stringify(result, null, 2)}</pre>
-      {dependencies?.length ? (
-        <DataTable type="dependencies" data={dependencies} />
-      ) : null}
-      {devDependencies?.length ? (
-        <DataTable type="devDependencies" data={devDependencies} />
-      ) : null}
+      {loadingState === "loading" ? (
+        <h1>Loading...</h1>
+      ) : (
+        <>
+          {dependencies?.length ? (
+            <DataTable type="dependencies" data={dependencies} />
+          ) : null}
+          {devDependencies?.length ? (
+            <DataTable type="devDependencies" data={devDependencies} />
+          ) : null}
+        </>
+      )}
+      {/* <pre>{JSON.stringify(result, null, 2)}</pre> */}
     </div>
   );
 };
