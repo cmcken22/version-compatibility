@@ -6,6 +6,7 @@ import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 import { useSelector } from "react-redux";
 import {
   deselectVersion,
+  makeDetectAllSelected,
   makeSelectDownloadString,
   makeSelectPackages,
   selectBasePackage,
@@ -51,8 +52,6 @@ const DataTableRow = ({ item, level }: any) => {
     },
     [item, dispatch],
   );
-
-  console.log(item?.name, "additionalRows:", additionalRows);
 
   return (
     <React.Fragment>
@@ -145,6 +144,7 @@ const DataTableRow = ({ item, level }: any) => {
 };
 
 const DataTable = ({ data, type }: any) => {
+  const dispatch = useAppDispatch();
   const basePackage = useSelector(selectBasePackage);
   const baseVersion = useSelector(selectBaseVersion);
   const [openSnackbar, setOpenSnackbar] = useState(false);
@@ -162,9 +162,13 @@ const DataTable = ({ data, type }: any) => {
     };
   }, [downloadString, type]);
 
-  // console.log("downloadString:", downloadString);
-  // console.log("npmStr:", npmStr);
-  // console.log("yarnStr:", yarnStr);
+  const requiresUpdateSelectionQuery = makeDetectAllSelected(
+    type,
+    (obj: any) => obj?.requiresUpdate === true,
+  );
+  const allRequiredChecked = useSelector(requiresUpdateSelectionQuery);
+  const allSelectionQuery = makeDetectAllSelected(type);
+  const allOptionsChecked = useSelector(allSelectionQuery);
 
   const options = useMemo(() => {
     const options = data?.filter((item: any) => {
@@ -180,51 +184,38 @@ const DataTable = ({ data, type }: any) => {
     });
   }, [showInvalidReposOnly, data]);
 
-  // const detectAllRequiredChecked = useCallback(() => {
-  //   for (const item of data) {
-  //     if (item.requiresUpdate) {
-  //       if (!updateObject[item.name]) return false;
-  //     }
-  //   }
-  //   return true;
-  // }, [updateObject, data]);
+  const indeterminate = useMemo(() => {
+    if (allRequiredChecked && !allOptionsChecked) return true;
+    return false;
+  }, [allRequiredChecked, allOptionsChecked]);
 
-  // // console.log("updateObject:", updateObject);
-  // // console.log("data:", data);
+  const handleSelectAll = useCallback(
+    (checked: boolean) => {
+      for (const item of data) {
+        if (checked) {
+          if (indeterminate) {
+            dispatch(
+              selectVersion({
+                name: item?.name,
+                version: item?.selectedVersion,
+              }),
+            );
+          } else if (item.requiresUpdate) {
+            dispatch(
+              selectVersion({
+                name: item?.name,
+                version: item?.selectedVersion,
+              }),
+            );
+          }
+        } else {
+          dispatch(deselectVersion({ name: item?.name }));
+        }
+      }
+    },
+    [dispatch, data, indeterminate],
+  );
 
-  // const detectAllChecked = useCallback(() => {
-  //   for (const item of data) {
-  //     if (!updateObject[item.name]) return false;
-  //   }
-  //   return true;
-  // }, [updateObject, data]);
-
-  // const allRequiredChecked = useMemo(() => {
-  //   return detectAllRequiredChecked();
-  // }, [detectAllRequiredChecked]);
-
-  // const allChecked = useMemo(() => {
-  //   if (showInvalidReposOnly) return detectAllRequiredChecked();
-  //   return detectAllChecked();
-  // }, [detectAllChecked, detectAllRequiredChecked, showInvalidReposOnly]);
-
-  // const indeterminate = useMemo(() => {
-  //   if (allRequiredChecked && !allChecked) return true;
-  //   return false;
-  // }, [allRequiredChecked, allChecked]);
-
-  // const handleUpdate = useCallback(
-  //   (e: any) => {
-  //     for (const item of data) {
-  //       if (indeterminate) {
-  //         onUpdate(item, e);
-  //       } else if (item.requiresUpdate || !e?.target?.checked) {
-  //         onUpdate(item, e);
-  //       }
-  //     }
-  //   },
-  //   [data, updateObject, setUpdateObject, onUpdate, indeterminate]
-  // );
   const handleCopyText = useCallback(
     (text: string) => {
       copyToClipboard(text);
@@ -245,20 +236,29 @@ const DataTable = ({ data, type }: any) => {
 
   return (
     <div>
+      <pre className="text-2xl font-bold mb-4">{type}</pre>
       <table border={1} style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr>
-            <th className="text-left">Library</th>
-            <th className="text-left">Current Version</th>
             <th className="text-left">
-              Compatible with {basePackage}@{baseVersion}
+              <pre>Library</pre>
             </th>
-            <th className="text-left">Requires Update</th>
+            <th className="text-left">
+              <pre>Current Version</pre>
+            </th>
+            <th className="text-left">
+              <pre>
+                Compatible with {basePackage}@{baseVersion}
+              </pre>
+            </th>
+            <th className="text-left">
+              <pre>Requires Update</pre>
+            </th>
             <th className="text-left">
               <Checkbox
-              // checked={allChecked}
-              // onChange={(e) => handleUpdate(e)}
-              // indeterminate={indeterminate}
+                checked={allOptionsChecked}
+                onChange={e => handleSelectAll(e?.target?.checked)}
+                indeterminate={indeterminate}
               />
             </th>
           </tr>
@@ -273,14 +273,14 @@ const DataTable = ({ data, type }: any) => {
           ))}
         </tbody>
       </table>
-      <div className="flex flex-col gap-2 mt-4">
+      <div className="flex flex-col gap-4 mt-5">
         {npmStr && (
           <div
             className="cursor-copy w-fit flex items-center"
             onClick={() => handleCopyText(npmStr)}
           >
             <ContentCopyIcon fontSize="small" />
-            <pre className="ml-2">{npmStr}</pre>
+            <pre className="ml-2 whitespace-break-spaces">{npmStr}</pre>
           </div>
         )}
         {yarnStr && (
@@ -289,7 +289,7 @@ const DataTable = ({ data, type }: any) => {
             onClick={() => handleCopyText(yarnStr)}
           >
             <ContentCopyIcon fontSize="small" />
-            <pre className="ml-2">{yarnStr}</pre>
+            <pre className="ml-2 whitespace-break-spaces">{yarnStr}</pre>
           </div>
         )}
       </div>

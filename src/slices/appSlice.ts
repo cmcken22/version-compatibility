@@ -21,8 +21,8 @@ export interface AppSliceState {
 }
 
 const initialState: AppSliceState = {
-  // jsonData: {},
-  jsonData: testData,
+  jsonData: {},
+  // jsonData: testData,
   basePackage: "react",
   baseVersion: "18.3.1",
   // basePackage: "ag-grid-react",
@@ -312,9 +312,11 @@ export const selectVersion = createAsyncThunk(
       formattedVersion = last;
     }
 
-    dispatch(
-      checkForAdditionalDependencies({ name, version: formattedVersion! }),
-    );
+    if (!data?.[name] || data?.[name]?.selectedVersion !== formattedVersion) {
+      dispatch(
+        checkForAdditionalDependencies({ name, version: formattedVersion! }),
+      );
+    }
 
     return {
       name,
@@ -338,7 +340,7 @@ export const deselectVersion = createAsyncThunk(
 );
 
 // Base selector to get data from state
-const selectData = (state: any) => {
+export const selectData = (state: any) => {
   return state?.[sliceName]?.data;
 };
 
@@ -405,6 +407,21 @@ export const makeSelectPackages = (name: string) => {
   });
 };
 
+export const makeDetectAllSelected = (type: string, filter?: any) => {
+  return createSelector([selectData], data => {
+    let count = 0;
+    let total = 0;
+    for (const key in data) {
+      const obj = data[key];
+      if (obj?.type !== type) continue;
+      if (filter && filter(obj) === false) continue;
+      if (obj?.selectedVersion) count++;
+      total++;
+    }
+    return total === count;
+  });
+};
+
 // If you are not using async thunks you can use the standalone `createSlice`.
 export const appSlice = createAppSlice({
   name: "appSlice",
@@ -443,7 +460,12 @@ export const appSlice = createAppSlice({
       })
       .addCase(selectVersion.fulfilled, (state, action: PayloadAction<any>) => {
         const { name, selectedVersion } = action.payload;
-        state.data[name].selectedVersion = selectedVersion;
+        try {
+          state.data[name].selectedVersion = selectedVersion;
+        } catch (error) {
+          console.error(`state.data: ${name}`, current(state.data));
+          console.error(error);
+        }
       })
       .addCase(
         deselectVersion.fulfilled,
