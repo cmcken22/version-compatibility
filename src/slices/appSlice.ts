@@ -1,7 +1,13 @@
-import { createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit";
+import {
+  createAsyncThunk,
+  current,
+  type PayloadAction,
+} from "@reduxjs/toolkit";
 import { createAppSlice } from "../store/createAppSlice";
 import { npmApiSlice } from "services/npmApi";
 import semver from "semver";
+import testData from "../features/FileUpload/testData";
+import { createSelector } from "reselect";
 
 const sliceName = "appSlice";
 
@@ -15,11 +21,12 @@ export interface AppSliceState {
 }
 
 const initialState: AppSliceState = {
-  jsonData: {},
-  // basePackage: "react",
-  // baseVersion: "18.3.1",
-  basePackage: "ag-grid-react",
-  baseVersion: "27.2.0",
+  // jsonData: {},
+  jsonData: testData,
+  basePackage: "react",
+  baseVersion: "18.3.1",
+  // basePackage: "ag-grid-react",
+  // baseVersion: "27.2.0",
   status: "idle",
   data: {},
   selected: {},
@@ -180,18 +187,80 @@ export const getAllPackageInfo = createAsyncThunk(
       for (const entry of result) {
         if (!entry?.payload || !entry?.payload?.length) continue;
         const { payload: compatibleVersions } = entry;
-        const { name, currentVersion, type } = entry?.meta?.arg;
+        const { name, type } = entry?.meta?.arg;
         if (!res[name]) {
           res[name] = {
             type,
             name,
-            currentVersion,
             compatibleVersions: [],
           };
         }
         res[name].compatibleVersions = compatibleVersions;
       }
     });
+
+    for (const key in res) {
+      let requiresUpdate = true;
+      const data = res[key];
+      const currentVersion =
+        jsonData["dependencies"]?.[key] ||
+        jsonData["devDependencies"]?.[key] ||
+        null;
+      const cv = currentVersion
+        ? semver.minVersion(currentVersion)?.version
+        : null;
+      const satisfied = currentVersion
+        ? data?.compatibleVersions.includes(cv)
+        : false;
+      requiresUpdate = !satisfied;
+      res[key].requiresUpdate = requiresUpdate;
+      res[key].currentVersion = currentVersion;
+    }
+
+    return res;
+  },
+);
+
+export const checkForAdditionalDependencies = createAsyncThunk(
+  `${sliceName}/checkForAdditionalDependencies`,
+  async (
+    { name, version }: { name: string; version: string },
+    { getState, dispatch }: any,
+  ) => {
+    await dispatch(removeAdditionalDependencies({ name }));
+
+    const { data, jsonData, basePackage } = getState()[sliceName];
+
+    const getRequiredPeerDependenciesResponse = await dispatch(
+      getRequiredPeerDependencies({ name, version }),
+    );
+
+    let res: any = {};
+    if (getRequiredPeerDependenciesResponse?.payload) {
+      const { payload } = getRequiredPeerDependenciesResponse;
+      for (const currName in payload) {
+        if (currName === basePackage) continue;
+        if (data[currName]) continue;
+        let type = "dependencies";
+        if (jsonData["devDependencies"]?.[currName]) type = "devDependencies";
+        const currentVersion =
+          jsonData["dependencies"]?.[currName] ||
+          jsonData["devDependencies"]?.[currName] ||
+          null;
+        const compatibleVersions = payload[currName];
+        if (!compatibleVersions?.length) continue;
+        if (!res[currName]) {
+          res[currName] = {
+            type,
+            name: currName,
+            currentVersion,
+            compatibleVersions: [],
+            dependentOn: name,
+          };
+        }
+        res[currName].compatibleVersions = compatibleVersions;
+      }
+    }
 
     for (const key in res) {
       let requiresUpdate = true;
@@ -208,6 +277,24 @@ export const getAllPackageInfo = createAsyncThunk(
   },
 );
 
+export const removeAdditionalDependencies = createAsyncThunk(
+  `${sliceName}/removeAdditionalDependencies`,
+  async ({ name }: { name: string }, { getState, dispatch }: any) => {
+    const { data } = getState()[sliceName];
+
+    const keysToRemove: string[] = [];
+    for (const key in data) {
+      const obj = data[key];
+      if (obj.dependentOn === name) {
+        keysToRemove.push(key);
+        dispatch(removeAdditionalDependencies({ name: key }));
+      }
+    }
+
+    return keysToRemove;
+  },
+);
+
 export const selectVersion = createAsyncThunk(
   `${sliceName}/selectVersion`,
   async (
@@ -218,17 +305,20 @@ export const selectVersion = createAsyncThunk(
     const libData = data[name];
     if (!libData) return { selected };
 
-    const res: any = { ...selected };
-
-    if (version === undefined) {
+    let formattedVersion = version;
+    if (formattedVersion === undefined) {
       const { compatibleVersions } = libData;
       const last = compatibleVersions?.[compatibleVersions?.length - 1];
-      res[name] = last;
-    } else {
-      res[name] = version;
+      formattedVersion = last;
     }
+
+    dispatch(
+      checkForAdditionalDependencies({ name, version: formattedVersion! }),
+    );
+
     return {
-      selected: res,
+      name,
+      selectedVersion: formattedVersion,
     };
   },
 );
@@ -239,18 +329,64 @@ export const deselectVersion = createAsyncThunk(
     { name }: { name: string; version?: string },
     { getState, dispatch }: any,
   ) => {
-    const { data, selected } = getState()[sliceName];
-    const libData = data[name];
-    if (!libData) return { selected };
-
-    const res: any = { ...selected };
-    delete res[name];
+    dispatch(removeAdditionalDependencies({ name }));
 
     return {
-      selected: res,
+      name,
     };
   },
 );
+
+// Base selector to get data from state
+const selectData = (state: any) => {
+  return state?.[sliceName]?.data;
+};
+
+// Memoized selector for dependencies
+export const selectDependencies = createSelector([selectData], data => {
+  const dependencies = [];
+  for (const key in data) {
+    const obj = data[key];
+    if (obj?.type === "dependencies") dependencies.push(obj);
+  }
+  return dependencies;
+});
+
+// Memoized selector for devDependencies
+export const selectDevDependencies = createSelector([selectData], data => {
+  const devDependencies = [];
+  for (const key in data) {
+    const obj = data[key];
+    if (obj?.type === "devDependencies") devDependencies.push(obj);
+  }
+  return devDependencies;
+});
+
+// Memoized selector for selected versions
+export const selectResult = createSelector([selectData], data => {
+  const res: any = {};
+  for (const key in data) {
+    const obj = data[key];
+    if (obj.selectedVersion) {
+      res[key] = obj.selectedVersion;
+    }
+  }
+  return res;
+});
+
+export const makeSelectDownloadString = (type: string) => {
+  return createSelector([selectData], data => {
+    const res: any = [];
+    for (const key in data) {
+      const obj = data[key];
+      if (obj?.type !== type) continue;
+      if (obj.selectedVersion) {
+        res.push(`${obj?.name}@${obj.selectedVersion}`);
+      }
+    }
+    return res?.join(" ");
+  });
+};
 
 // If you are not using async thunks you can use the standalone `createSlice`.
 export const appSlice = createAppSlice({
@@ -286,15 +422,36 @@ export const appSlice = createAppSlice({
         state.data = {};
       })
       .addCase(selectVersion.fulfilled, (state, action: PayloadAction<any>) => {
-        if (action?.payload?.selected) {
-          state.selected = action.payload.selected;
-        }
+        const { name, selectedVersion } = action.payload;
+        state.data[name].selectedVersion = selectedVersion;
       })
       .addCase(
         deselectVersion.fulfilled,
         (state, action: PayloadAction<any>) => {
-          if (action?.payload?.selected) {
-            state.selected = action.payload.selected;
+          const { name } = action.payload;
+          if (state.data[name]) {
+            delete state.data[name].selectedVersion;
+          }
+        },
+      )
+      .addCase(
+        checkForAdditionalDependencies.fulfilled,
+        (state, action: PayloadAction<any>) => {
+          const additionlDeps = action.payload || {};
+          state.data = {
+            ...state.data,
+            ...additionlDeps,
+          };
+        },
+      )
+      .addCase(
+        removeAdditionalDependencies.fulfilled,
+        (state, action: PayloadAction<any>) => {
+          const keysToRemove = action.payload || {};
+          for (const key of keysToRemove) {
+            if (state.data[key]) {
+              delete state.data[key];
+            }
           }
         },
       );
@@ -310,25 +467,9 @@ export const appSlice = createAppSlice({
       if (!state.basePackage || !state.baseVersion) return true;
       return false;
     },
-    selectDependencies: state => {
-      const { data } = state;
-      const dependencies: any = [];
-      for (const key in data) {
-        const obj = data[key];
-        if (obj?.type === "dependencies") dependencies.push(obj);
-      }
-      return dependencies;
-    },
-    selectDevDependencies: state => {
-      const { data } = state;
-      const devDependencies: any = [];
-      for (const key in data) {
-        const obj = data[key];
-        if (obj?.type === "devDependencies") devDependencies.push(obj);
-      }
-      return devDependencies;
-    },
-    selectResult: state => state.selected,
+    // selectDownloadString: (state, test) => {
+    //   console.log("state:", state, test);
+    // },
   },
 });
 
@@ -340,7 +481,5 @@ export const {
   selectBasePackage,
   selectBaseVersion,
   selectSubmitDisabled,
-  selectDependencies,
-  selectDevDependencies,
-  selectResult,
+  // selectDownloadString,
 } = appSlice.selectors;

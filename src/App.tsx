@@ -26,9 +26,6 @@ const App = () => {
     dispatch(getAllPackageInfo());
   }, [dispatch]);
 
-  console.log("dependencies:", dependencies);
-  console.log("devDependencies:", devDependencies);
-
   return (
     <div className="App p-10">
       <div className="flex flex-col gap-9 mb-9">
@@ -41,9 +38,13 @@ const App = () => {
           Submit
         </Button>
       </div>
-      {dependencies?.length ? <DataTable data={dependencies} /> : null}
-      {devDependencies?.length ? <DataTable data={devDependencies} /> : null}
       <pre>{JSON.stringify(result, null, 2)}</pre>
+      {dependencies?.length ? (
+        <DataTable type="dependencies" data={dependencies} />
+      ) : null}
+      {devDependencies?.length ? (
+        <DataTable type="devDependencies" data={devDependencies} />
+      ) : null}
     </div>
   );
 };

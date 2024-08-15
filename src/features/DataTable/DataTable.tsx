@@ -1,24 +1,23 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { SyntheticEvent, useCallback, useMemo, useState } from "react";
 import cx from "classnames";
-import { Checkbox } from "@mui/material";
-// import { useAppContext } from "../Context";
-// import { useModal } from "../Modal";
-import semver from "semver";
-// import {
-//   getPeerDependencies,
-//   getRequiredPeerDepData,
-// } from "../Context/Context";
+import { Checkbox, Snackbar, SnackbarCloseReason } from "@mui/material";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 import { useSelector } from "react-redux";
 import {
   deselectVersion,
+  makeSelectDownloadString,
   selectBasePackage,
   selectBaseVersion,
   selectResult,
   selectVersion,
 } from "slices/appSlice";
 import { useAppDispatch } from "store/hooks";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+
+const copyToClipboard = (val: string) => {
+  navigator.clipboard.writeText(val);
+};
 
 const DataTableRow = ({ item, idx }: any) => {
   const dispatch = useAppDispatch();
@@ -38,113 +37,12 @@ const DataTableRow = ({ item, idx }: any) => {
     return compatible;
   }, [item]);
 
-  // useEffect(() => {
-  //   return () => {
-  //     // onUpdate(item, { target: { checked: false } });
-  //   };
-  // }, [onUpdate, item]);
-
-  // const handleOpenModal = useCallback(() => {
-  //   showModal({
-  //     item: item,
-  //   });
-  // }, [item, showModal]);
-
   const checked = useMemo(() => {
-    return Boolean(result?.[item.name]);
-  }, [result, item]);
-
-  // const selectedVersionIndex = useMemo(() => {
-  //   const val = updateObject[item?.lib];
-  //   if (!val) return -1;
-  //   if (val === "latest") return item?.compatibleVersions?.length - 1;
-
-  //   const idx = item?.compatibleVersions?.findIndex(
-  //     (v: string) => v === semver.minVersion(val)?.version
-  //   );
-  //   return idx;
-  // }, [updateObject, item]);
-
-  // const handleUpdate = useCallback(
-  //   (e: any) => {
-  //     if (onUpdate) onUpdate(item, e);
-  //   },
-  //   [item, onUpdate]
-  // );
-
-  // const handleUpdateVersion = useCallback(
-  //   async (v: string) => {
-  //     if (!checked) {
-  //       handleUpdate({ target: { checked: true } });
-  //     }
-
-  //     if (updateVersion) updateVersion(item, v);
-  //     const otherItemsToRemove = dependencies
-  //       ?.filter((o: any) => o?.relatedTo === item.name)
-  //       .concat(devDependencies?.filter((o: any) => o?.relatedTo === item.name));
-  //     console.clear();
-  //     console.log("v:", v);
-  //     console.log("otherItemsToRemove:", otherItemsToRemove);
-  //     removeFromResult(otherItemsToRemove);
-  //     // if (v === "32.1.0") return;
-
-  //     setTimeout(async () => {
-  //       const additonalItems: any = [];
-  //       const peerDeps = await getPeerDependencies(item?.lib, v);
-  //       for (const peer in peerDeps) {
-  //         if (peer === basePackage) continue;
-  //         const exists1 = dependencies?.find((o: any) => o?.lib === peer);
-  //         const exists2 = devDependencies?.find((o: any) => o?.lib === peer);
-  //         if (exists1 || exists2) continue;
-  //         const currentVersion =
-  //           jsonData?.dependencies?.[peer] ||
-  //           jsonData?.devDependencies?.[peer] ||
-  //           "N/A";
-  //         const test = await getRequiredPeerDepData(
-  //           peer,
-  //           currentVersion,
-  //           peerDeps[peer]
-  //         );
-  //         additonalItems.push({
-  //           ...test,
-  //           type: item?.type,
-  //           relatedTo: item?.lib,
-  //         });
-  //       }
-
-  //       console.log("additonalItems:", additonalItems);
-  //       if (appendToResult && additonalItems?.length) {
-  //         appendToResult(additonalItems);
-  //       }
-  //     });
-  //     // setAdditonalItems(additonalItems);
-  //   },
-  //   [
-  //     checked,
-  //     updateVersion,
-  //     item,
-  //     updateVersion,
-  //     jsonData,
-  //     setAdditonalItems,
-  //     handleUpdate,
-  //     appendToResult,
-  //     removeFromResult,
-  //     basePackage,
-  //     dependencies,
-  //     devDependencies,
-  //     // result,
-  //   ]
-  // );
-
-  // if (item.name === "ag-grid-react") {
-  //   console.log(`>>>${item.name}:`, additonalItems);
-  // }
+    return Boolean(item?.selectedVersion);
+  }, [item?.selectedVersion]);
 
   const handleSelect = useCallback(
     (checked: boolean, version?: string) => {
-      console.clear();
-      console.log("item:", item?.name);
-      console.log("checked:", checked);
       if (checked) {
         dispatch(selectVersion({ name: item?.name, version }));
       } else {
@@ -158,7 +56,7 @@ const DataTableRow = ({ item, idx }: any) => {
     <React.Fragment key={`${item.name}--${idx}`}>
       <tr
         key={`${item.name}--${idx}`}
-        className={cx("border-t-2", {
+        className={cx("border-t-2 h-12", {
           "bg-red-50": item?.requiresUpdate,
           "bg-green-50": !item?.requiresUpdate,
         })}
@@ -167,17 +65,21 @@ const DataTableRow = ({ item, idx }: any) => {
           className="pl-3 underline cursor-pointer"
           // onClick={handleOpenModal}
         >
-          {item.name}
+          <pre>{item.name}</pre>
         </td>
-        <td>{item.currentVersion}</td>
+        <td>
+          <pre>{item.currentVersion}</pre>
+        </td>
         <td
-          className="min-w-96 cursor-pointer"
+          className="min-w-96 cursor-pointer flex items-center h-12"
           onClick={() => setExpandRow(p => !p)}
         >
           {expandRow ? <ArrowDropUpIcon /> : <ArrowDropDownIcon />}
-          {compatible?.join(" - ")}{" "}
+          <pre>{compatible?.join(" - ")} </pre>
         </td>
-        <td>{item.requiresUpdate ? "Yes" : "No"}</td>
+        <td>
+          <pre>{item.requiresUpdate ? "Yes" : "No"}</pre>
+        </td>
         <td>
           <Checkbox
             checked={checked}
@@ -197,7 +99,7 @@ const DataTableRow = ({ item, idx }: any) => {
           <td>
             <div className="flex flex-wrap items-center gap-2 max-w-96 mb-3">
               {item?.compatibleVersions?.map((v: string, idx: number) => {
-                const selected = result?.[item?.name] === v;
+                const selected = item?.selectedVersion === v;
                 return (
                   <div
                     key={`${item?.lib}--${v}`}
@@ -219,35 +121,30 @@ const DataTableRow = ({ item, idx }: any) => {
           <td></td>
         </tr>
       )}
-      {/* {additonalItems?.map((additonalItem: any, idx: number) => {
-        return (
-          <DataTableRow
-            key={`${item.name}--${basePackage}--${additonalItem?.lib}`}
-            item={additonalItem}
-            idx={idx}
-          />
-        );
-      })} */}
     </React.Fragment>
   );
 };
 
-const DataTable = ({ data }: any) => {
+const DataTable = ({ data, type }: any) => {
   const basePackage = useSelector(selectBasePackage);
   const baseVersion = useSelector(selectBaseVersion);
-  // const {
-  //   basePackage,
-  //   baseVersion,
-  //   showInvalidReposOnly,
-  //   updateObject,
-  //   setUpdateObject,
-  //   onUpdate,
-  // } = useAppContext();
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+
   const showInvalidReposOnly = false;
 
-  // console.log("\n\n------------");
-  // console.log("data:", data);
-  // console.log("------------\n\n");
+  const selectDownloadString = makeSelectDownloadString(type);
+  const downloadString = useSelector(selectDownloadString);
+
+  const { npmStr, yarnStr } = useMemo<any>(() => {
+    if (!downloadString) return { npmStr: "", yarnStr: "" };
+    return {
+      npmStr: `npm i ${downloadString} ${type === "devDependencies" ? "--save-dev" : ""}`,
+      yarnStr: `yarn add ${downloadString} ${type === "devDependencies" ? "-D" : ""}`,
+    };
+  }, [downloadString, type]);
+  console.log("downloadString:", downloadString);
+  console.log("npmStr:", npmStr);
+  console.log("yarnStr:", yarnStr);
 
   const options = useMemo(() => {
     const options = data?.filter((item: any) => {
@@ -255,7 +152,11 @@ const DataTable = ({ data }: any) => {
       if (showInvalidReposOnly && !requiresUpdate) return false;
       return true;
     });
-    return options;
+    return options.sort((a: any, b: any) => {
+      var textA = a.name.toUpperCase();
+      var textB = b.name.toUpperCase();
+      return textA < textB ? -1 : textA > textB ? 1 : 0;
+    });
   }, [showInvalidReposOnly, data]);
 
   // const detectAllRequiredChecked = useCallback(() => {
@@ -303,36 +204,85 @@ const DataTable = ({ data }: any) => {
   //   },
   //   [data, updateObject, setUpdateObject, onUpdate, indeterminate]
   // );
+  const handleCopyText = useCallback(
+    (text: string) => {
+      copyToClipboard(text);
+      setOpenSnackbar(true);
+    },
+    [setOpenSnackbar],
+  );
+
+  const handleCloseSnackbar = useCallback(
+    (event: SyntheticEvent | Event, reason?: SnackbarCloseReason) => {
+      if (reason === "clickaway") {
+        return;
+      }
+      setOpenSnackbar(false);
+    },
+    [setOpenSnackbar],
+  );
 
   return (
-    <table border={1} style={{ width: "100%", borderCollapse: "collapse" }}>
-      <thead>
-        <tr>
-          <th className="text-left">Library</th>
-          <th className="text-left">Current Version</th>
-          <th className="text-left">
-            Compatible with {basePackage}@{baseVersion}
-          </th>
-          <th className="text-left">Requires Update</th>
-          <th className="text-left">
-            <Checkbox
-            // checked={allChecked}
-            // onChange={(e) => handleUpdate(e)}
-            // indeterminate={indeterminate}
+    <div>
+      <table border={1} style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr>
+            <th className="text-left">Library</th>
+            <th className="text-left">Current Version</th>
+            <th className="text-left">
+              Compatible with {basePackage}@{baseVersion}
+            </th>
+            <th className="text-left">Requires Update</th>
+            <th className="text-left">
+              <Checkbox
+              // checked={allChecked}
+              // onChange={(e) => handleUpdate(e)}
+              // indeterminate={indeterminate}
+              />
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {options.map((item: any, idx: number) => (
+            <DataTableRow
+              key={`${item.name}--${basePackage}--${baseVersion}`}
+              item={item}
+              idx={idx}
             />
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {options.map((item: any, idx: number) => (
-          <DataTableRow
-            key={`${item.name}--${basePackage}--${baseVersion}`}
-            item={item}
-            idx={idx}
-          />
-        ))}
-      </tbody>
-    </table>
+          ))}
+        </tbody>
+      </table>
+      <div className="flex flex-col gap-2 mt-4">
+        {npmStr && (
+          <div
+            className="cursor-copy w-fit flex items-center"
+            onClick={() => handleCopyText(npmStr)}
+          >
+            <ContentCopyIcon fontSize="small" />
+            <pre className="ml-2">{npmStr}</pre>
+          </div>
+        )}
+        {yarnStr && (
+          <div
+            className="cursor-copy w-fit flex items-center"
+            onClick={() => handleCopyText(yarnStr)}
+          >
+            <ContentCopyIcon fontSize="small" />
+            <pre className="ml-2">{yarnStr}</pre>
+          </div>
+        )}
+      </div>
+      <Snackbar
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "right",
+        }}
+        open={openSnackbar}
+        autoHideDuration={1000}
+        onClose={handleCloseSnackbar}
+        message="Text Copied"
+      />
+    </div>
   );
 };
 
