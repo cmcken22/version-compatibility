@@ -24,7 +24,7 @@ const initialState: AppSliceState = {
   jsonData: {},
   // jsonData: testData,
   basePackage: "react",
-  baseVersion: "18.3.1",
+  baseVersion: "",
   // basePackage: "ag-grid-react",
   // baseVersion: "27.2.0",
   status: "idle",

@@ -37,10 +37,6 @@ const VersionFinder = ({
     return isLoading || isFetching || status === "pending";
   }, [isLoading, isFetching, status]);
 
-  useEffect(() => {
-    setOptions(data || []);
-  }, [data]);
-
   const handleSelect = useCallback(
     (val: any) => {
       dispatch(setBaseVersion(val));
@@ -48,6 +44,15 @@ const VersionFinder = ({
     },
     [dispatch],
   );
+
+  useEffect(() => {
+    setOptions(data || []);
+    if (!value) {
+      const last = data?.[data?.length - 1];
+      console.log("last:", last);
+      handleSelect(last?.value);
+    }
+  }, [data]);
 
   const valid = useMemo<boolean>(() => {
     if (!inputValue) return true;

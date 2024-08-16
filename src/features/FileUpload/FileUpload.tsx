@@ -41,7 +41,10 @@ const FileUpload = () => {
   return (
     <div
       className="flex items-center gap-4 w-fit cursor-pointer"
-      onClick={() => buttonRef?.current?.click()}
+      onClick={e => {
+        if (e?.target === buttonRef?.current) return;
+        buttonRef?.current?.click();
+      }}
     >
       <Button
         ref={buttonRef}
