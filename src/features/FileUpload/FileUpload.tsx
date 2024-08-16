@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { setJsonData } from "slices/appSlice";
+import { clearPreviousData, setJsonData } from "slices/appSlice";
 import { useAppDispatch } from "store/hooks";
 import testData from "./testData";
 import { Button } from "@mui/material";
@@ -13,11 +13,12 @@ const FileUpload = () => {
       const file = event.target.files[0];
       if (file) {
         const reader = new FileReader();
-        reader.onload = e => {
+        reader.onload = async e => {
           try {
             if (e?.target?.result) {
               // @ts-ignore
               const data = JSON.parse(e.target.result);
+              await dispatch(clearPreviousData());
               dispatch(setJsonData(data));
               setFileName(file.name);
             }

@@ -223,6 +223,12 @@ const DataTable = ({ data, type }: any) => {
 
   const handleSelectAll = useCallback(
     (checked: boolean) => {
+      const options = data?.filter((item: any) => {
+        const { requiresUpdate } = item;
+        if (showInvalidReposOnly && !requiresUpdate) return false;
+        return true;
+      });
+
       for (const opt of options) {
         const optChecked = Boolean(opt?.selectedVersion);
         if (checked) {
@@ -230,6 +236,7 @@ const DataTable = ({ data, type }: any) => {
           dispatch(
             selectVersion({
               name: opt?.name,
+              version: opt?.selectedVersion,
               selectAll: true,
             }),
           );
@@ -239,7 +246,7 @@ const DataTable = ({ data, type }: any) => {
         }
       }
     },
-    [dispatch, data, indeterminate, options],
+    [dispatch, data, indeterminate],
   );
 
   const handleCopyText = useCallback(
@@ -313,7 +320,7 @@ const DataTable = ({ data, type }: any) => {
         </tbody>
       </table>
       <OptionToggle
-        className="mt-4"
+        className="mt-5"
         value={downloadType}
         getOptionLabel={(opt: any) => opt}
         getOptionValue={(opt: any) => opt}

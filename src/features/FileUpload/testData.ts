@@ -38,7 +38,7 @@ const testData = {
     "@reduxjs/toolkit": "^1.5.1",
     // "ag-grid-community": "^20.2.0",
     // "ag-grid-enterprise": "^20.2.0",
-    // "ag-grid-react": "^20.2.0",
+    "ag-grid-react": "^20.2.0",
     // antd: "^4.15.1",
     // "antd-dayjs-webpack-plugin": "^1.0.6",
     // axios: "^0.21.1",
