@@ -18,7 +18,10 @@ export const makeStore = (preloadedState?: Partial<RootState>) => {
     // Adding the api middleware enables caching, invalidation, polling,
     // and other useful features of `rtk-query`.
     middleware: getDefaultMiddleware => {
-      return getDefaultMiddleware().concat(npmApiSlice.middleware);
+      return getDefaultMiddleware({
+        immutableCheck: false,
+        serializableCheck: false,
+      }).concat(npmApiSlice.middleware);
     },
     preloadedState,
     devTools: true,

@@ -13,7 +13,6 @@ import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 import { useSelector } from "react-redux";
 import {
   deselectVersion,
-  makeDetectAllSelected,
   makeSelectDownloadString,
   makeSelectPackages,
   selectBasePackage,
@@ -23,6 +22,7 @@ import {
 import { useAppDispatch } from "store/hooks";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import OptionToggle from "../OptionToggle";
+import semver from "semver";
 
 const copyToClipboard = (val: string) => {
   navigator.clipboard.writeText(val);
@@ -48,6 +48,12 @@ const DataTableRow = ({ item, level }: any) => {
 
   const checked = useMemo(() => {
     return Boolean(item?.selectedVersion);
+  }, [item?.selectedVersion]);
+
+  const formattedVersion = useMemo(() => {
+    if (!item?.selectedVersion) return "";
+    const v = semver.minVersion(item?.selectedVersion)?.version;
+    return v;
   }, [item?.selectedVersion]);
 
   const handleSelect = useCallback(
@@ -119,7 +125,7 @@ const DataTableRow = ({ item, level }: any) => {
           <td>
             <div className="flex flex-wrap items-center gap-2 max-w-96 mb-3">
               {item?.compatibleVersions?.map((v: string, idx: number) => {
-                const selected = item?.selectedVersion === v;
+                const selected = formattedVersion === v;
                 return (
                   <div
                     key={`${item?.lib}--${v}`}
@@ -173,14 +179,6 @@ const DataTable = ({ data, type }: any) => {
     };
   }, [downloadString, type]);
 
-  const requiresUpdateSelectionQuery = makeDetectAllSelected(
-    type,
-    (obj: any) => obj?.requiresUpdate === true,
-  );
-  const allRequiredChecked = useSelector(requiresUpdateSelectionQuery);
-  const allSelectionQuery = makeDetectAllSelected(type);
-  const allOptionsChecked = useSelector(allSelectionQuery);
-
   const options = useMemo(() => {
     const options = data?.filter((item: any) => {
       if (item.dependentOn) return false;
@@ -196,49 +194,52 @@ const DataTable = ({ data, type }: any) => {
   }, [showInvalidReposOnly, data]);
 
   const indeterminate = useMemo(() => {
-    if (allRequiredChecked && !allOptionsChecked) return true;
+    const someChecked = options?.some((opt: any) => opt.selectedVersion);
+    const someNotChecked = options?.some((opt: any) => !opt.selectedVersion);
+    if (someChecked) {
+      if (someNotChecked) return true;
+    }
     return false;
-  }, [allRequiredChecked, allOptionsChecked]);
+  }, [options]);
+
+  const allChecked = useMemo(() => {
+    const someNotChecked = options?.some((opt: any) => !opt.selectedVersion);
+    return !someNotChecked;
+  }, [options]);
 
   const handleToggle = useCallback(
     (checked: boolean) => {
       if (checked) {
-        for (const item of data) {
-          if (item?.selectedVersion) {
+        for (const item of options) {
+          if (!item?.requiresUpdate && item?.selectedVersion) {
             dispatch(deselectVersion({ name: item?.name }));
           }
         }
       }
       setShowInvalidReposOnly(checked);
     },
-    [setShowInvalidReposOnly, data, dispatch],
+    [setShowInvalidReposOnly, options, dispatch],
   );
 
   const handleSelectAll = useCallback(
     (checked: boolean) => {
-      for (const item of data) {
+      for (const opt of options) {
+        const optChecked = Boolean(opt?.selectedVersion);
         if (checked) {
-          if (indeterminate) {
-            dispatch(
-              selectVersion({
-                name: item?.name,
-                version: item?.selectedVersion,
-              }),
-            );
-          } else if (item.requiresUpdate) {
-            dispatch(
-              selectVersion({
-                name: item?.name,
-                version: item?.selectedVersion,
-              }),
-            );
-          }
+          if (optChecked) continue;
+          dispatch(
+            selectVersion({
+              name: opt?.name,
+              selectAll: true,
+            }),
+          );
         } else {
-          dispatch(deselectVersion({ name: item?.name }));
+          if (!optChecked) continue;
+          dispatch(deselectVersion({ name: opt?.name }));
         }
       }
     },
-    [dispatch, data, indeterminate],
+    [dispatch, data, indeterminate, options],
   );
 
   const handleCopyText = useCallback(
@@ -294,7 +295,7 @@ const DataTable = ({ data, type }: any) => {
             </th>
             <th className="text-left">
               <Checkbox
-                checked={allOptionsChecked}
+                checked={allChecked}
                 onChange={e => handleSelectAll(e?.target?.checked)}
                 indeterminate={indeterminate}
               />

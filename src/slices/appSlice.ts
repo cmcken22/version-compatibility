@@ -224,10 +224,26 @@ export const getAllPackageInfo = createAsyncThunk(
   },
 );
 
+const determinVersionToSelect = (data: any) => {
+  const { compatibleVersions, currentVersion } = data;
+  if (currentVersion) {
+    for (const v of compatibleVersions) {
+      const satisfied = semver.satisfies(v, currentVersion);
+      if (satisfied) return currentVersion;
+    }
+  }
+  const last = compatibleVersions?.[compatibleVersions?.length - 1];
+  return last;
+};
+
 export const checkForAdditionalDependencies = createAsyncThunk(
   `${sliceName}/checkForAdditionalDependencies`,
   async (
-    { name, version }: { name: string; version: string },
+    {
+      name,
+      version,
+      selectAll,
+    }: { name: string; version: string; selectAll?: boolean },
     { getState, dispatch }: any,
   ) => {
     await dispatch(removeAdditionalDependencies({ name }));
@@ -266,14 +282,26 @@ export const checkForAdditionalDependencies = createAsyncThunk(
     }
 
     for (const key in res) {
-      let requiresUpdate = true;
       const data = res[key];
       const currentVersion = data?.currentVersion
         ? semver.minVersion(data?.currentVersion)?.version
         : null;
-      const satisfied = data?.compatibleVersions.includes(currentVersion);
-      requiresUpdate = !satisfied;
-      res[key].requiresUpdate = requiresUpdate;
+      if (!currentVersion) {
+        res[key].requiresUpdate = true;
+        res[key].currentVersion = null;
+      } else {
+        let satisfied = false;
+        const compatibleVersions = data?.compatibleVersions || [];
+        for (const v of compatibleVersions) {
+          satisfied = semver.satisfies(v, currentVersion);
+          if (satisfied) break;
+        }
+        res[key].requiresUpdate = !satisfied;
+        res[key].currentVersion = currentVersion;
+      }
+      if (selectAll) {
+        res[key].selectedVersion = determinVersionToSelect(data);
+      }
     }
 
     return res;
@@ -301,7 +329,11 @@ export const removeAdditionalDependencies = createAsyncThunk(
 export const selectVersion = createAsyncThunk(
   `${sliceName}/selectVersion`,
   async (
-    { name, version }: { name: string; version?: string },
+    {
+      name,
+      version,
+      selectAll,
+    }: { name: string; version?: string; selectAll?: boolean },
     { getState, dispatch }: any,
   ) => {
     const { data, selected } = getState()[sliceName];
@@ -310,14 +342,16 @@ export const selectVersion = createAsyncThunk(
 
     let formattedVersion = version;
     if (formattedVersion === undefined) {
-      const { compatibleVersions } = libData;
-      const last = compatibleVersions?.[compatibleVersions?.length - 1];
-      formattedVersion = last;
+      formattedVersion = determinVersionToSelect(libData);
     }
 
     if (!data?.[name] || data?.[name]?.selectedVersion !== formattedVersion) {
       dispatch(
-        checkForAdditionalDependencies({ name, version: formattedVersion! }),
+        checkForAdditionalDependencies({
+          name,
+          version: formattedVersion!,
+          selectAll,
+        }),
       );
     }
 
