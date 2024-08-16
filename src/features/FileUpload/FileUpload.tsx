@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { clearPreviousData, setJsonData } from "slices/appSlice";
 import { useAppDispatch } from "store/hooks";
 import testData from "./testData";
@@ -7,6 +7,7 @@ import { Button } from "@mui/material";
 const FileUpload = () => {
   const dispatch = useAppDispatch();
   const [fileName, setFileName] = useState("");
+  const buttonRef = useRef<any>(null);
 
   const handleFileChange = useCallback(
     (event: any) => {
@@ -38,8 +39,12 @@ const FileUpload = () => {
   // }, [dispatch]);
 
   return (
-    <div className="flex items-center gap-4">
+    <div
+      className="flex items-center gap-4 w-fit cursor-pointer"
+      onClick={() => buttonRef?.current?.click()}
+    >
       <Button
+        ref={buttonRef}
         variant="contained"
         component="label"
         className="shadow-none !bg-gray-500"
