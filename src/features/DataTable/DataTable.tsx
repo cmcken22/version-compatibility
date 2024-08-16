@@ -22,6 +22,7 @@ import {
 } from "slices/appSlice";
 import { useAppDispatch } from "store/hooks";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import OptionToggle from "../OptionToggle";
 
 const copyToClipboard = (val: string) => {
   navigator.clipboard.writeText(val);
@@ -78,9 +79,10 @@ const DataTableRow = ({ item, level }: any) => {
         >
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
-              {Array.from({ length: level }).map((_, idx: number) => (
+              {/* {Array.from({ length: level }).map((_, idx: number) => (
                 <div key={idx} className="w-2 h-2 bg-black rounded-full" />
-              ))}
+              ))} */}
+              {level > 0 && <div className="w-2 h-2 bg-black rounded-full" />}
             </div>
             <pre>{item.name}</pre>
           </div>
@@ -158,6 +160,7 @@ const DataTable = ({ data, type }: any) => {
   const baseVersion = useSelector(selectBaseVersion);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [showInvalidReposOnly, setShowInvalidReposOnly] = useState(false);
+  const [downloadType, setDownloadType] = useState("npm");
 
   const selectDownloadString = makeSelectDownloadString(type);
   const downloadString = useSelector(selectDownloadString);
@@ -308,8 +311,16 @@ const DataTable = ({ data, type }: any) => {
           ))}
         </tbody>
       </table>
+      <OptionToggle
+        className="mt-4"
+        value={downloadType}
+        getOptionLabel={(opt: any) => opt}
+        getOptionValue={(opt: any) => opt}
+        options={["npm", "yarn"]}
+        onChange={setDownloadType}
+      />
       <div className="flex flex-col gap-4 mt-5">
-        {npmStr && (
+        {npmStr && downloadType === "npm" ? (
           <div
             className="cursor-copy w-fit flex items-center"
             onClick={() => handleCopyText(npmStr)}
@@ -317,8 +328,8 @@ const DataTable = ({ data, type }: any) => {
             <ContentCopyIcon fontSize="small" />
             <pre className="ml-2 whitespace-break-spaces">{npmStr}</pre>
           </div>
-        )}
-        {yarnStr && (
+        ) : null}
+        {yarnStr && downloadType === "yarn" ? (
           <div
             className="cursor-copy w-fit flex items-center"
             onClick={() => handleCopyText(yarnStr)}
@@ -326,7 +337,7 @@ const DataTable = ({ data, type }: any) => {
             <ContentCopyIcon fontSize="small" />
             <pre className="ml-2 whitespace-break-spaces">{yarnStr}</pre>
           </div>
-        )}
+        ) : null}
       </div>
       <Snackbar
         anchorOrigin={{

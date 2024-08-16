@@ -1,0 +1,37 @@
+@tailwind components;
+
+@layer components {
+  .option-toggle {
+    @apply flex items-center w-fit relative;    
+  }
+  .option-toggle__border {
+    @apply absolute top-0 left-0 w-full h-full pointer-events-none;
+    @apply border border-gray-500 overflow-hidden rounded;
+    
+  }
+  .option-toggle__option {
+    @apply px-4 cursor-pointer relative;
+  }
+  .option-toggle__option--selected {
+    @apply bg-green-50 font-bold text-green-500;
+  }
+  .option-toggle__option-inner-border {
+    @apply h-full bg-gray-500 absolute;
+    width: 1px;
+  }
+  .option-toggle__option-border {
+    @apply absolute border border-green-500 w-full h-full top-0 left-0 z-10;
+  }
+  .option-toggle__option-border--first {
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+    border-top-right-radius: 0px;
+    border-bottom-right-radius: 0px;
+  }
+  .option-toggle__option-border--last {
+    border-top-left-radius: 0px;
+    border-bottom-left-radius: 0px;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+  }
+}

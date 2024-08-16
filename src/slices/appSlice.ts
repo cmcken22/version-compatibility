@@ -343,6 +343,10 @@ export const deselectVersion = createAsyncThunk(
 );
 
 // Base selector to get data from state
+export const selectState = (state: any) => {
+  return state?.[sliceName];
+};
+
 export const selectData = (state: any) => {
   return state?.[sliceName]?.data;
 };
@@ -380,8 +384,9 @@ export const selectResult = createSelector([selectData], data => {
 });
 
 export const makeSelectDownloadString = (type: string) => {
-  return createSelector([selectData], data => {
-    const res: any = [];
+  return createSelector([selectState], state => {
+    const { data, basePackage, baseVersion } = state;
+    const res: any = [`${basePackage}@${baseVersion}`];
     for (const key in data) {
       const obj = data[key];
       if (obj?.type !== type) continue;
@@ -421,6 +426,7 @@ export const makeDetectAllSelected = (type: string, filter?: any) => {
       if (obj?.selectedVersion) count++;
       total++;
     }
+    if (total === 0 && count === 0) return false;
     return total === count;
   });
 };
