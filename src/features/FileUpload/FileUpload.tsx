@@ -39,13 +39,7 @@ const FileUpload = () => {
   // }, [dispatch]);
 
   return (
-    <div
-      className="flex items-center gap-4 w-fit cursor-pointer"
-      onClick={e => {
-        if (e?.target === buttonRef?.current) return;
-        buttonRef?.current?.click();
-      }}
-    >
+    <div className="flex items-center w-fit cursor-pointer h-fit">
       <Button
         ref={buttonRef}
         variant="contained"
@@ -61,7 +55,14 @@ const FileUpload = () => {
           className="hidden"
         />
       </Button>
-      <pre>{fileName ? fileName : "Select a file to begin"}</pre>
+      <pre
+        className="pl-4 h-full"
+        onClick={() => {
+          buttonRef?.current?.click();
+        }}
+      >
+        {fileName ? fileName : "Select a file to begin"}
+      </pre>
     </div>
   );
 };
