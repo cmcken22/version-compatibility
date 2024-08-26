@@ -3,30 +3,27 @@ import "./App.css";
 import { Autocomplete } from "./features/Autocomplete";
 import FileUpload from "./features/FileUpload";
 import { VersionFinder } from "./features/VersionFinder";
-import { useSelector } from "react-redux";
 import {
   clearPreviousData,
   getAllPackageInfo,
-  selectData,
   selectDependencies,
   selectDevDependencies,
   selectLoadingState,
-  selectResult,
   selectSubmitAttempted,
   selectSubmitDisabled,
 } from "slices/appSlice";
 import { useCallback, useEffect, useMemo } from "react";
-import { useAppDispatch } from "store/hooks";
+import { useAppDispatch, useAppSelector } from "store/hooks";
 import { DataTable } from "./features/DataTable";
 import cx from "classnames";
 
 const App = () => {
   const dispatch = useAppDispatch();
-  const submitDisabled = useSelector<any, boolean>(selectSubmitDisabled);
-  const dependencies = useSelector(selectDependencies);
-  const devDependencies = useSelector(selectDevDependencies);
-  const loadingState = useSelector(selectLoadingState);
-  const submitAttempted = useSelector(selectSubmitAttempted);
+  const submitDisabled = useAppSelector<any, boolean>(selectSubmitDisabled);
+  const dependencies = useAppSelector(selectDependencies);
+  const devDependencies = useAppSelector(selectDevDependencies);
+  const loadingState = useAppSelector(selectLoadingState);
+  const submitAttempted = useAppSelector(selectSubmitAttempted);
 
   const handleSubmit = useCallback(async () => {
     await dispatch(clearPreviousData());
@@ -58,9 +55,11 @@ const App = () => {
 
   return (
     <div className="App p-10">
+      <pre className="mb-5">Step 1. Upload a package.json file</pre>
       <div className="flex flex-col gap-9 mb-9">
         <FileUpload />
       </div>
+      <pre className="mb-8">Step 2. Select a dependency and version to compare against</pre>
       <div className="flex items-center gap-4 mb-9">
         <Autocomplete label="Package" placeholder="Select a package..." />
         <VersionFinder label="Version" placeholder="Select a version..." />

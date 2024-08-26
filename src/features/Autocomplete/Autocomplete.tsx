@@ -1,20 +1,19 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Autocomplete as MuiAutocomplete, TextField } from "@mui/material";
 import { useDebounce } from "use-debounce";
 import { skipToken } from "@reduxjs/toolkit/query";
 import { useGetReposByNameQuery } from "services/npmApi";
-import { useAppDispatch } from "store/hooks";
+import { useAppDispatch, useAppSelector } from "store/hooks";
 import {
   clearPreviousData,
   selectBasePackage,
   setBasePackage,
 } from "slices/appSlice";
-import { useSelector } from "react-redux";
 import "./Autocomplete.css";
 
 const Autocomplete = ({ name, label, placeholder, disabled, ...rest }: any) => {
   const dispatch = useAppDispatch();
-  const value = useSelector(selectBasePackage);
+  const value = useAppSelector(selectBasePackage);
   const [options, setOptions] = useState([]);
   const [inputValue, setInputValue] = useState("");
   const [searchTerm] = useDebounce(inputValue, 500);

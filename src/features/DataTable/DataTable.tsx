@@ -1,16 +1,16 @@
-import React, { SyntheticEvent, useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
+import type { SyntheticEvent } from "react";
 import cx from "classnames";
 import {
   Checkbox,
   FormControlLabel,
   FormGroup,
   Snackbar,
-  SnackbarCloseReason,
   Switch,
 } from "@mui/material";
+import type { SnackbarCloseReason } from "@mui/material";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
-import { useSelector } from "react-redux";
 import {
   deselectVersion,
   makeSelectDownloadString,
@@ -19,7 +19,7 @@ import {
   selectBaseVersion,
   selectVersion,
 } from "slices/appSlice";
-import { useAppDispatch } from "store/hooks";
+import { useAppDispatch, useAppSelector } from "store/hooks";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import OptionToggle from "../OptionToggle";
 import semver from "semver";
@@ -33,7 +33,7 @@ const DataTableRow = ({ item, level }: any) => {
   const [expandRow, setExpandRow] = useState(false);
 
   const selectPackageQuery = makeSelectPackages(item?.name);
-  const additionalRows = useSelector(selectPackageQuery);
+  const additionalRows = useAppSelector(selectPackageQuery);
 
   const compatible = useMemo(() => {
     const { compatibleVersions } = item;
@@ -162,14 +162,14 @@ const DataTableRow = ({ item, level }: any) => {
 
 const DataTable = ({ data, type }: any) => {
   const dispatch = useAppDispatch();
-  const basePackage = useSelector(selectBasePackage);
-  const baseVersion = useSelector(selectBaseVersion);
+  const basePackage = useAppSelector(selectBasePackage);
+  const baseVersion = useAppSelector(selectBaseVersion);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [showInvalidReposOnly, setShowInvalidReposOnly] = useState(false);
   const [downloadType, setDownloadType] = useState("npm");
 
   const selectDownloadString = makeSelectDownloadString(type);
-  const downloadString = useSelector(selectDownloadString);
+  const downloadString = useAppSelector(selectDownloadString);
 
   const { npmStr, yarnStr } = useMemo<any>(() => {
     if (!downloadString) return { npmStr: "", yarnStr: "" };
