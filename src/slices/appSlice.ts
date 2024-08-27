@@ -23,7 +23,8 @@ export interface AppSliceState {
 const initialState: AppSliceState = {
   jsonData: {},
   // jsonData: testData,
-  basePackage: "react",
+  // basePackage: "react",
+  basePackage: "",
   baseVersion: "",
   // basePackage: "ag-grid-react",
   // baseVersion: "27.2.0",

@@ -55,11 +55,13 @@ const App = () => {
 
   return (
     <div className="App p-10">
-      <pre className="mb-5">Step 1. Upload a package.json file</pre>
-      <div className="flex flex-col gap-9 mb-9">
+      <pre className="mb-8">Step 1. Upload a package.json file</pre>
+      <div className="flex flex-col gap-9 mb-8">
         <FileUpload />
       </div>
-      <pre className="mb-8">Step 2. Select a dependency and version to compare against</pre>
+      <pre className="mb-8">
+        Step 2. Select a dependency and version to compare against
+      </pre>
       <div className="flex items-center gap-4 mb-9">
         <Autocomplete label="Package" placeholder="Select a package..." />
         <VersionFinder label="Version" placeholder="Select a version..." />
