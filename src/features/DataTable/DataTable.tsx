@@ -268,12 +268,21 @@ const DataTable = ({ data, type }: any) => {
     [setOpenSnackbar],
   );
 
+  const hasCompatibleOnly = useMemo(() => {
+    if (!options) return false;
+    for (const option of options) {
+      if (option?.requiresUpdate) return false;
+    }
+    return true;
+  }, [options]);
+
   return (
     <div>
       <pre className="text-2xl font-bold mb-4">{type}</pre>
       <FormGroup className="w-fit mb-3">
         <FormControlLabel
           label={<pre>{`Show incompatible ${type} only`}</pre>}
+          disabled={hasCompatibleOnly}
           control={
             <Switch
               checked={showInvalidReposOnly}

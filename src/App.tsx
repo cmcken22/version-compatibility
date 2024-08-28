@@ -1,7 +1,7 @@
 import "./App.css";
 import type { SyntheticEvent } from "react";
 import type { SnackbarCloseReason } from "@mui/material";
-import { Alert, Button, Snackbar, Tooltip } from "@mui/material";
+import { Alert, Button, Snackbar } from "@mui/material";
 import { Autocomplete } from "./features/Autocomplete";
 import FileUpload from "./features/FileUpload";
 import { VersionFinder } from "./features/VersionFinder";
@@ -18,7 +18,6 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import { DataTable } from "./features/DataTable";
-import cx from "classnames";
 
 const App = () => {
   const dispatch = useAppDispatch();
@@ -31,11 +30,17 @@ const App = () => {
   const [openSnackbar, setOpenSnackbar] = useState(false);
 
   const handleSubmit = useCallback(async () => {
+    if (submitDisabled) {
+      if (preventSubmitReason) {
+        setOpenSnackbar(true);
+      }
+      return;
+    }
     await dispatch(clearPreviousData());
     setTimeout(() => {
       dispatch(getAllPackageInfo());
     });
-  }, [dispatch]);
+  }, [dispatch, submitDisabled, preventSubmitReason, setOpenSnackbar]);
 
   const empty = useMemo(() => {
     if (loadingState === "loading" || !submitAttempted) return null;
@@ -92,27 +97,13 @@ const App = () => {
       <div className="flex items-center gap-4 mb-9">
         <Autocomplete label="Package" placeholder="Select a package..." />
         <VersionFinder label="Version" placeholder="Select a version..." />
-        <Tooltip
-          title={preventSubmitReason ? <pre>{preventSubmitReason}</pre> : ""}
-          placement="top"
-          arrow
+        <Button
+          onClick={handleSubmit}
+          variant="outlined"
+          className="!border-gray-500"
         >
-          <span>
-            <Button
-              disabled={submitDisabled}
-              onClick={handleSubmit}
-              variant="outlined"
-              className={cx({
-                "!border-none": submitDisabled,
-                "!border-gray-500": !submitDisabled,
-              })}
-            >
-              <pre className={cx({ "!text-black": !submitDisabled })}>
-                Submit
-              </pre>
-            </Button>
-          </span>
-        </Tooltip>
+          <pre className="!text-black">Submit</pre>
+        </Button>
       </div>
       {loadingState === "loading" ? (
         <pre className="text-2xl font-bold">Loading...</pre>
