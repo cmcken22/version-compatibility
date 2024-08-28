@@ -1,5 +1,7 @@
-import { Button } from "@mui/material";
 import "./App.css";
+import type { SyntheticEvent } from "react";
+import type { SnackbarCloseReason } from "@mui/material";
+import { Alert, Button, Snackbar, Tooltip } from "@mui/material";
 import { Autocomplete } from "./features/Autocomplete";
 import FileUpload from "./features/FileUpload";
 import { VersionFinder } from "./features/VersionFinder";
@@ -9,10 +11,11 @@ import {
   selectDependencies,
   selectDevDependencies,
   selectLoadingState,
+  selectPreventSubmitReason,
   selectSubmitAttempted,
   selectSubmitDisabled,
 } from "slices/appSlice";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import { DataTable } from "./features/DataTable";
 import cx from "classnames";
@@ -24,6 +27,8 @@ const App = () => {
   const devDependencies = useAppSelector(selectDevDependencies);
   const loadingState = useAppSelector(selectLoadingState);
   const submitAttempted = useAppSelector(selectSubmitAttempted);
+  const preventSubmitReason = useAppSelector(selectPreventSubmitReason);
+  const [openSnackbar, setOpenSnackbar] = useState(false);
 
   const handleSubmit = useCallback(async () => {
     await dispatch(clearPreviousData());
@@ -40,10 +45,15 @@ const App = () => {
 
   const handleKeyPress = useCallback(
     (e: any) => {
-      if (submitDisabled) return;
+      if (submitDisabled) {
+        if (preventSubmitReason) {
+          setOpenSnackbar(true);
+        }
+        return;
+      }
       if (e?.code === "Enter") handleSubmit();
     },
-    [submitDisabled, handleSubmit],
+    [submitDisabled, handleSubmit, setOpenSnackbar, preventSubmitReason],
   );
 
   useEffect(() => {
@@ -52,6 +62,23 @@ const App = () => {
       window.removeEventListener("keydown", handleKeyPress);
     };
   }, [handleKeyPress]);
+
+  const handleCloseSnackbar = useCallback(
+    (event: SyntheticEvent | Event, reason?: SnackbarCloseReason) => {
+      if (reason === "clickaway") {
+        return;
+      }
+      setOpenSnackbar(false);
+    },
+    [setOpenSnackbar],
+  );
+
+  useEffect(() => {
+    if (!preventSubmitReason && openSnackbar) {
+      handleCloseSnackbar({} as SyntheticEvent, "timeout");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preventSubmitReason, openSnackbar]);
 
   return (
     <div className="App p-10">
@@ -65,17 +92,27 @@ const App = () => {
       <div className="flex items-center gap-4 mb-9">
         <Autocomplete label="Package" placeholder="Select a package..." />
         <VersionFinder label="Version" placeholder="Select a version..." />
-        <Button
-          disabled={submitDisabled}
-          onClick={handleSubmit}
-          variant="outlined"
-          className={cx({
-            "!border-none": submitDisabled,
-            "!border-gray-500": !submitDisabled,
-          })}
+        <Tooltip
+          title={preventSubmitReason ? <pre>{preventSubmitReason}</pre> : ""}
+          placement="top"
+          arrow
         >
-          <pre className={cx({ "!text-black": !submitDisabled })}>Submit</pre>
-        </Button>
+          <span>
+            <Button
+              disabled={submitDisabled}
+              onClick={handleSubmit}
+              variant="outlined"
+              className={cx({
+                "!border-none": submitDisabled,
+                "!border-gray-500": !submitDisabled,
+              })}
+            >
+              <pre className={cx({ "!text-black": !submitDisabled })}>
+                Submit
+              </pre>
+            </Button>
+          </span>
+        </Tooltip>
       </div>
       {loadingState === "loading" ? (
         <pre className="text-2xl font-bold">Loading...</pre>
@@ -95,6 +132,24 @@ const App = () => {
           ) : null}
         </div>
       ) : null}
+      <Snackbar
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "right",
+        }}
+        open={openSnackbar && preventSubmitReason !== ""}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity="error"
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          <pre>{preventSubmitReason}</pre>
+        </Alert>
+      </Snackbar>
     </div>
   );
 };

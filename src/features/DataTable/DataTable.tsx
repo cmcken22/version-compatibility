@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import type { SyntheticEvent } from "react";
 import cx from "classnames";
 import {
+  Alert,
   Checkbox,
   FormControlLabel,
   FormGroup,
@@ -349,14 +350,22 @@ const DataTable = ({ data, type }: any) => {
       </div>
       <Snackbar
         anchorOrigin={{
-          vertical: "bottom",
+          vertical: "top",
           horizontal: "right",
         }}
         open={openSnackbar}
         autoHideDuration={1000}
         onClose={handleCloseSnackbar}
-        message="Text Copied"
-      />
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity="info"
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          <pre>Text copied to clipboard</pre>
+        </Alert>
+      </Snackbar>
     </div>
   );
 };

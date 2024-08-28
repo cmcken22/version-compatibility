@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Autocomplete as MuiAutocomplete, TextField } from "@mui/material";
 import { skipToken } from "@reduxjs/toolkit/query";
-import { useSelector } from "react-redux";
 import {
   clearPreviousData,
   selectBasePackage,
@@ -9,7 +8,7 @@ import {
   setBaseVersion,
 } from "slices/appSlice";
 import { useGetVersionsQuery } from "services/npmApi";
-import { useAppDispatch } from "store/hooks";
+import { useAppDispatch, useAppSelector } from "store/hooks";
 import "./VersionFinder.css";
 
 const VersionFinder = ({
@@ -21,8 +20,8 @@ const VersionFinder = ({
 }: any) => {
   const dispatch = useAppDispatch();
   const ref = useRef<any>();
-  const basePackage = useSelector(selectBasePackage);
-  const value = useSelector(selectBaseVersion);
+  const basePackage = useAppSelector(selectBasePackage);
+  const value = useAppSelector(selectBaseVersion);
 
   const [open, setOpen] = useState(false);
   const [options, setOptions] = useState<any>([]);
@@ -49,7 +48,6 @@ const VersionFinder = ({
     setOptions(data || []);
     if (!value) {
       const last = data?.[data?.length - 1];
-      console.log("last:", last);
       handleSelect(last?.value);
     }
   }, [data]);
@@ -91,6 +89,7 @@ const VersionFinder = ({
         }}
         onChange={(event: any, newValue: any) => {
           if (newValue) {
+            setOpen(false);
             const exists = options?.find(
               (o: any) => o.value === newValue.value,
             );
@@ -99,10 +98,9 @@ const VersionFinder = ({
               setOptions(newValue ? [newValue, ...options] : options);
             }
           }
-          setOpen(false);
           handleSelect(newValue?.value);
         }}
-        disabled={!basePackage || disabled}
+        disabled={!basePackage || disabled || loading}
         renderInput={params => (
           <TextField
             {...rest}

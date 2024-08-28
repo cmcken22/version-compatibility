@@ -6,8 +6,8 @@ import {
 import { createAppSlice } from "../store/createAppSlice";
 import { npmApiSlice } from "services/npmApi";
 import semver from "semver";
-import testData from "../features/FileUpload/testData";
 import { createSelector } from "reselect";
+import * as yup from "yup";
 
 const sliceName = "appSlice";
 
@@ -22,12 +22,8 @@ export interface AppSliceState {
 
 const initialState: AppSliceState = {
   jsonData: {},
-  // jsonData: testData,
-  // basePackage: "react",
-  basePackage: "",
+  basePackage: "react",
   baseVersion: "",
-  // basePackage: "ag-grid-react",
-  // baseVersion: "27.2.0",
   status: "idle",
   data: {},
   submitAttempted: false,
@@ -187,7 +183,7 @@ export const getAllPackageInfo = createAsyncThunk(
       for (const entry of result) {
         if (!entry?.payload || !entry?.payload?.length) continue;
         const { payload: compatibleVersions } = entry;
-        const { name, type } = entry?.meta?.arg;
+        const { name, type } = entry.meta.arg;
         if (!res[name]) {
           res[name] = {
             type,
@@ -558,6 +554,32 @@ export const appSlice = createAppSlice({
       return false;
     },
     selectLoadingState: state => state.status,
+    selectPreventSubmitReason: state => {
+      const schema = yup.object().shape({
+        jsonData: yup
+          .object()
+          .required("Package.json file is required")
+          .test(
+            "is-not-empty",
+            "Package.json file is required",
+            value => value && Object.keys(value).length > 0,
+          ),
+        basePackage: yup.string().required("Package is required"),
+        baseVersion: yup.string().required("Version is required"),
+      });
+
+      try {
+        schema.validateSync(state, { abortEarly: false });
+        return "";
+      } catch (error: any) {
+        let errorString = "";
+        const errors = error.errors || [];
+        for (const err of errors) {
+          errorString += `${err} \n`;
+        }
+        return errorString;
+      }
+    },
   },
 });
 
@@ -576,4 +598,5 @@ export const {
   selectSubmitAttempted,
   selectSubmitDisabled,
   selectLoadingState,
+  selectPreventSubmitReason,
 } = appSlice.selectors;
